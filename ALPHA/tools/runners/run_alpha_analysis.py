@@ -2,14 +2,17 @@
 """Run ALPHA self-analysis on its own codebase."""
 
 import asyncio
+from pathlib import Path
 import sys
 import os
-from pathlib import Path
-from ALPHA.core.alpha_self_analysis import ALPHASelfAnalysis
 
 # Add project root to Python path
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
+project_root = Path(__file__).parent  # Current directory is src
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Import after path setup
+from ALPHA.core.alpha_self_analysis import ALPHASelfAnalysis
 
 
 async def main():
@@ -45,8 +48,7 @@ async def main():
         if report.get('recommendations'):
             print("\nRecommendations:")
             for i, rec in enumerate(report['recommendations'], 1):
-                print(f"\n{i}. {rec['description']}")
-                print(f"   Priority: {rec['priority']}")
+                print(f"\n{i}. {rec['description']} (Priority: {rec['priority']})")
                 if 'details' in rec:
                     print(f"   Details: {rec['details']}")
     
