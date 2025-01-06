@@ -1,0 +1,88 @@
+[tool.black]
+line-length = 100
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+(
+    \.git
+    | \.venv
+    | \.mypy_cache
+    | \.pytest_cache
+    | \.vscode
+    | __pycache__
+    | build
+    | dist
+    | \.eggs
+    | .*\.egg-info
+)
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 100
+include_trailing_comma = true
+skip = [".git", ".venv", "__pycache__", ".mypy_cache", ".pytest_cache", ".vscode", "build", "dist"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+ignore_missing_imports = true
+exclude = [
+    'tests/',
+    'setup.py',
+    '.venv/',
+    '__pycache__/',
+    '.mypy_cache/',
+    '.pytest_cache/',
+    '.vscode/',
+    'build/',
+    'dist/',
+]
+
+[tool.pylint.messages_control]
+disable = [
+    "C0111",  # missing-docstring
+    "C0103",  # invalid-name
+    "C0330",  # bad-continuation
+    "C0326",  # bad-whitespace
+    "W0511",  # fixme
+    "R0903",  # too-few-public-methods
+    "R0913",  # too-many-arguments
+    "W0621",  # redefined-outer-name
+]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint.master]
+ignore = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".vscode",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = "E203"
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".vscode",
+    "build",
+    "dist",
+    "*.egg-info",
+    "tests/*",
+]
