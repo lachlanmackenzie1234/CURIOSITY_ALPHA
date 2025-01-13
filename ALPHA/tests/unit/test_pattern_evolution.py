@@ -217,7 +217,11 @@ def test_context() -> Dict[str, Union[str, Dict[str, float]]]:
     }
 
 
-def test_pattern_metrics(evolution, test_data, test_context):
+def test_pattern_metrics(
+    evolution: PatternEvolution,
+    test_data: array.array,
+    test_context: Dict[str, Union[str, Dict[str, float]]],
+) -> None:
     """Test pattern metrics calculation."""
     metrics = evolution._calculate_pattern_metrics(test_data, test_context)
 
@@ -237,12 +241,16 @@ def test_pattern_metrics(evolution, test_data, test_context):
         assert 0.0 <= value <= 1.0
 
 
-def test_pattern_evolution(evolution, test_data, test_context):
+def test_pattern_evolution(
+    evolution: PatternEvolution,
+    test_data: array.array,
+    test_context: Dict[str, Union[str, Dict[str, float]]],
+) -> None:
     """Test pattern evolution over multiple iterations."""
     pattern_id = "test_pattern"
 
     # Simulate pattern evolution over multiple iterations
-    for i in range(5):
+    for _ in range(5):
         # Evolve pattern with slight modifications
         evolved_data = array.array(
             "B",
@@ -270,30 +278,32 @@ def test_pattern_evolution(evolution, test_data, test_context):
     assert 0.0 <= adaptation_rate <= 1.0
 
 
-def test_pattern_analysis(evolution, test_data):
+def test_pattern_analysis(evolution: PatternEvolution, test_data: array.array) -> None:
     """Test pattern analysis capabilities."""
     # Test entropy calculation
-    entropy = evolution._calculate_entropy(np.frombuffer(test_data, dtype=np.uint8))
+    pattern_array = np.frombuffer(test_data, dtype=np.uint8)
+    entropy = evolution._calculate_entropy(pattern_array)
     assert 0.0 <= entropy <= 1.0
 
     # Test symmetry calculation
-    symmetry = evolution._calculate_symmetry(np.frombuffer(test_data, dtype=np.uint8))
+    symmetry = evolution._calculate_symmetry(pattern_array)
     assert 0.0 <= symmetry <= 1.0
 
     # Test consistency calculation
-    consistency = evolution._calculate_consistency(np.frombuffer(test_data, dtype=np.uint8))
+    consistency = evolution._calculate_consistency(pattern_array)
     assert 0.0 <= consistency <= 1.0
 
 
-def test_error_resistance(evolution, test_data):
+def test_error_resistance(evolution: PatternEvolution, test_data: array.array) -> None:
     """Test error resistance capabilities."""
     # Test error resistance calculation
-    resistance = evolution._calculate_error_resistance(np.frombuffer(test_data, dtype=np.uint8))
+    pattern_array = np.frombuffer(test_data, dtype=np.uint8)
+    resistance = evolution._calculate_error_resistance(pattern_array)
     assert 0.0 <= resistance <= 1.0
 
 
 @pytest.mark.integration
-def test_timewarp_evolution():
+def test_timewarp_evolution() -> None:
     """Test TimeWarp evolution and quantum state handling."""
     # Create test pattern with stable resonance
     pattern = NaturalPattern(
@@ -339,35 +349,40 @@ def test_timewarp_evolution():
 
 
 @pytest.fixture
-def memory_block():
+def memory_block() -> MemoryBlock:
     """Create memory block for testing."""
     return MemoryBlock()
 
 
 @pytest.fixture
-def pulse():
+def pulse() -> Pulse:
     """Create pulse observer for natural patterns."""
     return Pulse()
 
 
 @pytest.fixture
-def kyma_state():
+def kyma_state() -> KymaState:
     """Create wave communication state."""
     return KymaState()
 
 
 @pytest.fixture
-def time_warp():
+def time_warp() -> TimeWarp:
     """Create temporal experience handler."""
     return TimeWarp()
 
 
 @pytest.mark.integration
-def test_pattern_experience_and_evolution(memory_block, pulse, kyma_state, time_warp):
+def test_pattern_experience_and_evolution(
+    memory_block: MemoryBlock,
+    pulse: Pulse,
+    kyma_state: KymaState,
+    time_warp: TimeWarp,
+) -> None:
     """Test how patterns naturally gain experience and evolve."""
     # Create initial pattern from hardware state
     print("\n[Step 1] Creating initial pattern from hardware state...")
-    pattern_data = []
+    pattern_data: List[int] = []
     for _ in range(32):  # Collect 32 samples
         state = pulse.sense()
         if state is not None:
@@ -381,7 +396,7 @@ def test_pattern_experience_and_evolution(memory_block, pulse, kyma_state, time_
     if isinstance(initial_data, bytes):
         data_array = np.frombuffer(initial_data, dtype=np.uint8)
     else:
-        data_array = np.array(initial_data, dtype=np.uint8)
+        data_array = initial_data
 
     assert memory_block.write(ref, data_array)
     metrics = memory_block.get_metrics(ref)
@@ -407,7 +422,12 @@ def test_pattern_experience_and_evolution(memory_block, pulse, kyma_state, time_
             pattern_data.append(current_state)
 
         harmonics = analyze_harmonic_relationships(data_array.tobytes(), f"Experience {i+1}")
-        visualize_pattern_state(data_array.tobytes(), metrics, f"Experience {i+1}", harmonics)
+        visualize_pattern_state(
+            data_array.tobytes(),
+            metrics,
+            f"Experience {i+1}",
+            harmonics,
+        )
 
     # Check if pattern can dream
     print("\n[Step 3] Checking pattern's ability to dream...")
@@ -427,10 +447,10 @@ def test_pattern_experience_and_evolution(memory_block, pulse, kyma_state, time_
         # Create spatial pattern from variation
         var_data = np.frombuffer(var, dtype=np.uint8)
         spatial_pattern = {
-            "resonance": np.mean(np.diff(var_data)),
-            "stability": var_metrics.resonance_stability,
-            "complexity": len(np.unique(var_data)) / len(var_data),
-            "harmony": 1.0 - np.std(var_data) / 128.0,  # Normalized to [0,1]
+            "resonance": float(np.mean(np.diff(var_data))),
+            "stability": float(var_metrics.resonance_stability),
+            "complexity": float(len(np.unique(var_data)) / len(var_data)),
+            "harmony": float(1.0 - np.std(var_data) / 128.0),
         }
 
         # Integrate with KymaState
@@ -456,17 +476,18 @@ def test_pattern_experience_and_evolution(memory_block, pulse, kyma_state, time_
         analyze_harmonic_relationships(var, f"Variation {i}") for i, var in enumerate(variations)
     ]
 
+    # Print evolution summary with proper line breaks
     print("\nEvolution Summary:")
     print(f"Total Variations: {len(variations)}")
-    print(f"Mean φ ratio: {np.mean([h['phi_ratio'] for h in all_harmonics]):.3f}")
-    print(f"φ stability: {np.std([h['phi_ratio'] for h in all_harmonics]):.3f}")
-    print(f"Entropy evolution: {np.mean([h['entropy'] for h in all_harmonics]):.3f}")
-    print(f"Symmetry preservation: {np.mean([h['symmetry'] for h in all_harmonics]):.3f}")
+    print(f"Mean φ ratio: " f"{np.mean([h['phi_ratio'] for h in all_harmonics]):.3f}")
+    print(f"φ stability: " f"{np.std([h['phi_ratio'] for h in all_harmonics]):.3f}")
+    print(f"Entropy evolution: " f"{np.mean([h['entropy'] for h in all_harmonics]):.3f}")
+    print(f"Symmetry preservation: " f"{np.mean([h['symmetry'] for h in all_harmonics]):.3f}")
 
-    # Temporal-Spatial Integration Metrics
+    # Print temporal-spatial metrics with proper line breaks
     print("\nTemporal-Spatial Integration:")
     print(f"Quantum Coherence: {time_warp.quantum_coherence:.3f}")
-    print(f"Crystallization Points: {len(time_warp.crystallization_points)}")
+    print(f"Crystallization Points: " f"{len(time_warp.crystallization_points)}")
     print(f"Standing Waves: {len(time_warp.standing_waves)}")
     print(f"Resonance Channels: {len(kyma_state.resonance_channels)}")
 
