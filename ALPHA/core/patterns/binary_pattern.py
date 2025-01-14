@@ -16,17 +16,105 @@ from .natural_patterns import NaturalPattern, NaturalPrincipleType
 
 @dataclass
 class BinaryPattern:
-    """Represents a pure binary pattern sequence."""
+    """Fundamental binary pattern with natural rhythm detection."""
 
     sequence: List[int]
     timestamp: datetime
     source: str
+    stability: float = 0.0
     resonance: float = 0.0
-    stability: float = field(
-        default_factory=lambda: psutil.cpu_percent() / 100
-    )  # Initialize from CPU state
     interactions: Dict["BinaryPattern", float] = field(default_factory=dict)
     reverberation: Optional["BinaryPattern"] = None
+    _rhythm_cache: Optional[List[int]] = field(default=None, repr=False)
+    _stability_score: float = field(default=0.0, repr=False)
+
+    def find_natural_rhythm(self) -> "BinaryPattern":
+        """Find the natural rhythm within this pattern."""
+        if not self._rhythm_cache:
+            self._rhythm_cache = self._detect_rhythm()
+        return BinaryPattern(
+            sequence=self._rhythm_cache, timestamp=self.timestamp, source=f"{self.source}_rhythm"
+        )
+
+    def next_pulse(self) -> "BinaryPattern":
+        """Generate next pulse in the pattern's rhythm."""
+        if not self._rhythm_cache:
+            self.find_natural_rhythm()
+        # Rotate rhythm by one position
+        if self._rhythm_cache:
+            rotated = self._rhythm_cache[1:] + self._rhythm_cache[:1]
+            return BinaryPattern(
+                sequence=rotated, timestamp=datetime.now(), source=f"{self.source}_pulse"
+            )
+        return BinaryPattern(
+            sequence=self.sequence, timestamp=datetime.now(), source=f"{self.source}_pulse"
+        )
+
+    def is_stable(self) -> bool:
+        """Check if pattern has achieved stability."""
+        if self._stability_score == 0.0:
+            self._stability_score = self._calculate_stability()
+        return self._stability_score > 0.7  # Threshold for stability
+
+    def _detect_rhythm(self) -> List[int]:
+        """Detect natural rhythm in binary sequence."""
+        if len(self.sequence) < 2:
+            return self.sequence
+
+        # Find most common subsequence
+        window = len(self.sequence) // 2
+        while window > 1:
+            for i in range(len(self.sequence) - window + 1):
+                subsequence = self.sequence[i : i + window]
+                if self._is_rhythmic(subsequence):
+                    return subsequence
+            window = window // 2
+        return self.sequence
+
+    def _is_rhythmic(self, subsequence: List[int]) -> bool:
+        """Check if subsequence forms a rhythm."""
+        # Look for pattern repetition
+        if len(subsequence) < 2:
+            return False
+
+        repeats = 0
+        for i in range(len(self.sequence) - len(subsequence) + 1):
+            if self.sequence[i : i + len(subsequence)] == subsequence:
+                repeats += 1
+
+        return repeats >= 2  # At least two repetitions
+
+    def _calculate_stability(self) -> float:
+        """Calculate pattern stability score."""
+        if not self.sequence:
+            return 0.0
+
+        # Factors in rhythm presence and consistency
+        rhythm = self._detect_rhythm()
+        if not rhythm:
+            return 0.0
+
+        rhythm_length = len(rhythm)
+        sequence_length = len(self.sequence)
+
+        # Calculate stability ratio
+        repeats = self._count_rhythm_repeats(rhythm)
+        ratio = sequence_length / rhythm_length if rhythm_length > 0 else 1
+        stability = (rhythm_length / sequence_length) * (repeats / ratio)
+
+        return min(1.0, stability)
+
+    def _count_rhythm_repeats(self, rhythm: List[int]) -> int:
+        """Count how many times rhythm repeats in sequence."""
+        if not rhythm:
+            return 0
+
+        repeats = 0
+        rhythm_len = len(rhythm)
+        for i in range(0, len(self.sequence) - rhythm_len + 1, rhythm_len):
+            if self.sequence[i : i + rhythm_len] == rhythm:
+                repeats += 1
+        return repeats
 
     def to_natural_pattern(self) -> NaturalPattern:
         """Convert to NaturalPattern while preserving hardware-derived qualities."""

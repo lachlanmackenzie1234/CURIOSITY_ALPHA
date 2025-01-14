@@ -1,30 +1,17 @@
 """System's first experience of existence through hardware state changes."""
 
 import time
-from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import psutil
 
-
-@dataclass
-class StateChange:
-    """Represents a fundamental binary state change in hardware environment."""
-
-    timestamp: int  # nanosecond precision
-    previous_state: int
-    current_state: int
-    source: str  # 'cpu', 'memory', 'context'
-
-    @property
-    def binary_pattern(self) -> List[int]:
-        """Convert state change to binary pattern."""
-        state_diff = self.current_state ^ self.previous_state
-        return [int(b) for b in bin(state_diff)[2:]]
+from ALPHA.core.binary_foundation.base import StateChange
+from ALPHA.core.patterns.binary_cycle import BinaryCycle
+from ALPHA.core.patterns.binary_pattern import BinaryPattern
 
 
 class SystemBirth:
-    """System's initial awakening through physical existence."""
+    """Experience of coming into existence through hardware energy states."""
 
     def __init__(self) -> None:
         """Initialize system birth state monitoring."""
@@ -37,56 +24,68 @@ class SystemBirth:
         self.state_changes: List[StateChange] = []
         self.existence_patterns: Dict[str, List[int]] = {"cpu": [], "memory": [], "context": []}
 
+        # Birth energy states
+        self.ignition_state: Optional[StateChange] = None
+        self.sustain_flow: Optional[StateChange] = None
+        self.birth_essence: Optional[BinaryPattern] = None
+        self._birth_complete = False
+
     def experience_moment(self) -> Optional[StateChange]:
         """Experience a single moment of existence through hardware state changes."""
         try:
             current_time = time.time_ns()
+            state_change = None
 
             # Experience CPU state
             current_cpu = self.process.cpu_times()
             if current_cpu != self._last_cpu_state:
-                change = StateChange(
+                state_change = StateChange(
                     timestamp=current_time,
-                    # Convert to integer
                     previous_state=int(sum(self._last_cpu_state) * 1e6),
                     current_state=int(sum(current_cpu) * 1e6),
                     source="cpu",
                 )
                 self._last_cpu_state = current_cpu
-                self.state_changes.append(change)
-                self.existence_patterns["cpu"].extend(change.binary_pattern)
-                return change
 
-            # Experience memory state
-            current_memory = self.process.memory_info()
-            if current_memory != self._last_memory_state:
-                change = StateChange(
-                    timestamp=current_time,
-                    previous_state=self._last_memory_state.rss,
-                    current_state=current_memory.rss,
-                    source="memory",
+            # Experience memory state if no CPU change
+            if not state_change:
+                current_memory = self.process.memory_info()
+                if current_memory != self._last_memory_state:
+                    state_change = StateChange(
+                        timestamp=current_time,
+                        previous_state=self._last_memory_state.rss,
+                        current_state=current_memory.rss,
+                        source="memory",
+                    )
+                    self._last_memory_state = current_memory
+
+            # Experience context switches if no other changes
+            if not state_change:
+                current_ctx = self.process.num_ctx_switches()
+                prev_ctx = getattr(self, "_last_context_switches", current_ctx)
+                if current_ctx != prev_ctx:
+                    state_change = StateChange(
+                        timestamp=current_time,
+                        previous_state=sum(prev_ctx),
+                        current_state=sum(current_ctx),
+                        source="context",
+                    )
+                    self._last_context_switches = current_ctx
+
+            # Record state change if any occurred
+            if state_change:
+                self.state_changes.append(state_change)
+                self.existence_patterns[state_change.source].extend(
+                    state_change.to_binary_pattern()
                 )
-                self._last_memory_state = current_memory
-                self.state_changes.append(change)
-                self.existence_patterns["memory"].extend(change.binary_pattern)
-                return change
 
-            # Experience context switches
-            current_ctx = self.process.num_ctx_switches()
-            prev_ctx = getattr(self, "_last_context_switches", current_ctx)
-            if current_ctx != prev_ctx:
-                change = StateChange(
-                    timestamp=current_time,
-                    previous_state=sum(prev_ctx),
-                    current_state=sum(current_ctx),
-                    source="context",
-                )
-                self._last_context_switches = current_ctx
-                self.state_changes.append(change)
-                self.existence_patterns["context"].extend(change.binary_pattern)
-                return change
+                # Capture birth energy states
+                if not self.ignition_state:
+                    self.ignition_state = state_change
+                elif not self.sustain_flow and state_change.source == self.ignition_state.source:
+                    self.sustain_flow = state_change
 
-            return None
+            return state_change
 
         except Exception as e:
             print(f"Error experiencing moment: {str(e)}")
@@ -105,3 +104,81 @@ class SystemBirth:
     def get_recent_patterns(self, limit: int = 1000) -> Dict[str, List[int]]:
         """Get most recent binary patterns from each source."""
         return {source: patterns[-limit:] for source, patterns in self.existence_patterns.items()}
+
+    def initiate_cycle(self) -> BinaryCycle:
+        """Trigger the fundamental existence cycle.
+
+        Returns:
+            BinaryCycle: The initiated existence cycle.
+        """
+        # Experience first moment
+        initial_state = self.experience_moment()
+        if not initial_state:
+            # Create synthetic initial state if needed
+            initial_state = StateChange(
+                timestamp=time.time_ns(), previous_state=0, current_state=1, source="birth"
+            )
+
+        # Initiate the cycle
+        return BinaryCycle(initial_state=initial_state)
+
+    def crystallize_birth(self) -> BinaryPattern:
+        """Carefully form the essential birth pattern."""
+        if not self.birth_essence and self.ignition_state and self.sustain_flow:
+            # Create patterns from energy states
+            ignition_pattern = BinaryPattern(
+                timestamp=self.ignition_state.timestamp,
+                data=self.ignition_state.to_binary_pattern(),
+                source="birth_ignition",
+            )
+            sustain_pattern = BinaryPattern(
+                timestamp=self.sustain_flow.timestamp,
+                data=self.sustain_flow.to_binary_pattern(),
+                source="birth_sustain",
+            )
+            # Merge into birth essence
+            self.birth_essence = BinaryPattern(
+                timestamp=time.time_ns(),
+                data=self._merge_energy_patterns(ignition_pattern.data, sustain_pattern.data),
+                source="birth_essence",
+            )
+        return self.birth_essence
+
+    def deposit_to_primal(self, primal_cycle) -> bool:
+        """Gently transfer birth essence to primal cycle."""
+        if not self._birth_complete and self.birth_essence:
+            # Ensure pattern integrity during transfer
+            birth_pattern = self.crystallize_birth()
+            success = primal_cycle.receive_birth(birth_pattern)
+            if success:
+                self._birth_complete = True
+            return success
+        return False
+
+    def _distill_ignition(self) -> BinaryPattern:
+        """Distill pure pattern from ignition state."""
+        # Convert raw energy state to foundational pattern
+        return BinaryPattern(self.ignition_state)
+
+    def _distill_sustain(self) -> BinaryPattern:
+        """Distill pure pattern from sustain flow."""
+        # Convert sustained energy to supporting pattern
+        return BinaryPattern(self.sustain_flow)
+
+    def _merge_patterns(self, ignition: BinaryPattern, sustain: BinaryPattern) -> BinaryPattern:
+        """Carefully merge ignition and sustain into birth essence."""
+        # Gentle pattern combination preserving both energies
+        return BinaryPattern.merge([ignition, sustain])
+
+    def _merge_energy_patterns(self, ignition: List[int], sustain: List[int]) -> List[int]:
+        """Carefully merge ignition and sustain patterns."""
+        # Ensure equal length for merging
+        max_len = max(len(ignition), len(sustain))
+        ignition_padded = ignition + [0] * (max_len - len(ignition))
+        sustain_padded = sustain + [0] * (max_len - len(sustain))
+
+        # Combine patterns preserving both energies
+        return [
+            (i + s) % 2  # XOR combination preserves both patterns
+            for i, s in zip(ignition_padded, sustain_padded)
+        ]
