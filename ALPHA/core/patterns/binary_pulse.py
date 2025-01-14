@@ -12,6 +12,8 @@ from typing import Callable, Dict, Optional, Set
 
 import psutil
 
+print("Starting binary pulse module...")
+
 
 @dataclass
 class PulseState:
@@ -37,20 +39,26 @@ class Pulse:
 
     def __init__(self) -> None:
         """Initialize pulse observer."""
+        print("Initializing Pulse observer...")
         self.process = psutil.Process()
         # Hardware state tracking
         self._last_cpu = self.process.cpu_percent()
+        print(f"Initial CPU: {self._last_cpu}%")
         self._last_memory = psutil.virtual_memory().percent
+        print(f"Initial Memory: {self._last_memory}%")
         self._last_io = 0
         try:
             # Get initial IO counters if available
             counters = self.process.io_counters()
             self._last_io = sum(counters[2:4])  # read_bytes + write_bytes
+            print(f"Initial IO: {self._last_io}")
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
+            print("IO counters not available")
             pass
         # ALPHA state tracking (will be connected to actual ALPHA state)
         self._last_quantum = 0
         self._last_pattern = 0
+        print("Pulse observer initialized")
 
     @classmethod
     def get_shared_state(cls) -> PulseState:
@@ -140,6 +148,7 @@ class Pulse:
 
 def observe() -> None:
     """Create binary observation space."""
+    print("Starting observation...")
     pulse = Pulse()
     state = pulse.get_shared_state()
 
@@ -153,6 +162,7 @@ def observe() -> None:
     print("  Pattern [1 = changed, 0 = stable]")
 
     try:
+        print("\nBeginning observation loop...")
         while state.running:
             states = pulse.sense()
             if states:
@@ -166,6 +176,7 @@ def observe() -> None:
                     print(f"{component}:{value}", end=" ")
             time.sleep(0.1)
     except KeyboardInterrupt:
+        print("\nReceived interrupt signal")
         pass
     finally:
         pulse.stop()
@@ -174,11 +185,14 @@ def observe() -> None:
 
 def start_background_pulse() -> Pulse:
     """Start binary pulse observation in background thread."""
+    print("Starting background pulse...")
     pulse = Pulse()
     thread = threading.Thread(target=observe, daemon=True)
     thread.start()
+    print("Background pulse started")
     return pulse
 
 
 if __name__ == "__main__":
+    print("Main entry point")
     observe()
