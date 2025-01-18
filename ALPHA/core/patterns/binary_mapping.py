@@ -104,7 +104,9 @@ class PatternMapper:
             return None
 
     def map_from_binary(
-        self, binary_data: bytes, encoding_type: Optional[BinaryEncodingType] = None
+        self,
+        binary_data: bytes,
+        encoding_type: Optional[BinaryEncodingType] = None,
     ) -> Optional[NaturalPattern]:
         """Map binary data back to a pattern."""
         try:
@@ -152,7 +154,9 @@ class PatternMapper:
             return None
 
     def _select_encoding_type(
-        self, pattern: NaturalPattern, resonance_profile: Optional[ResonanceProfile]
+        self,
+        pattern: NaturalPattern,
+        resonance_profile: Optional[ResonanceProfile],
     ) -> BinaryEncodingType:
         """Select the best encoding type for a pattern."""
         try:
@@ -206,7 +210,10 @@ class PatternMapper:
 
             # Add partnership metrics if available
             if resonance_profile and resonance_profile.partnership_metrics:
-                for metric_name, value in resonance_profile.partnership_metrics.items():
+                for (
+                    metric_name,
+                    value,
+                ) in resonance_profile.partnership_metrics.items():
                     header.append(int(value * 255))
 
             header.append(self.PATTERN_END)
@@ -217,7 +224,9 @@ class PatternMapper:
             return b""
 
     def _encode_resonant_pattern(
-        self, pattern: NaturalPattern, resonance_profile: Optional[ResonanceProfile] = None
+        self,
+        pattern: NaturalPattern,
+        resonance_profile: Optional[ResonanceProfile] = None,
     ) -> bytes:
         """Encode a pattern with resonance preservation."""
         try:
@@ -383,7 +392,12 @@ class PatternMapper:
                 return None
 
             # Decode type symbol
-            type_map = {0xF1: "golden_ratio", 0xF2: "fibonacci", 0xF3: "pi", 0xF4: "e"}
+            type_map = {
+                0xF1: "golden_ratio",
+                0xF2: "fibonacci",
+                0xF3: "pi",
+                0xF4: "e",
+            }
 
             principle_type = type_map.get(binary_data[1], "unknown")
             confidence = (binary_data[2] - 0xE0) / 15.0
@@ -441,7 +455,8 @@ class PatternMapper:
 
                 # Compare partnership metrics
                 partnership_preserved = self._calculate_partnership_preservation(
-                    resonance_profile.partnership_metrics, new_profile.partnership_metrics
+                    resonance_profile.partnership_metrics,
+                    new_profile.partnership_metrics,
                 )
 
                 # Calculate preservation score with partnership awareness
@@ -570,7 +585,12 @@ class PatternMapper:
 
             # Calculate differences in partnership metrics
             differences = []
-            for key in ["mutual_growth", "resonance_depth", "adaptation_rate", "support_strength"]:
+            for key in [
+                "mutual_growth",
+                "resonance_depth",
+                "adaptation_rate",
+                "support_strength",
+            ]:
                 if key in original_metrics and key in new_metrics:
                     diff = abs(original_metrics[key] - new_metrics[key])
                     differences.append(diff)

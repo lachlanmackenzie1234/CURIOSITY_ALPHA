@@ -686,7 +686,11 @@ class NaturalObserver:
 
     def _calculate_entropy(self, metrics: MemoryMetrics) -> float:
         """Calculate information entropy of current state."""
-        values = [metrics.experience_depth, metrics.wonder_potential, metrics.resonance_stability]
+        values = [
+            metrics.experience_depth,
+            metrics.wonder_potential,
+            metrics.resonance_stability,
+        ]
         # Normalize and calculate entropy
         probs = (
             np.array(values) / sum(values)
@@ -777,7 +781,11 @@ class NaturalObserver:
             "total_events": len(self.significant_events),
             "event_types": {},
             "timing": {"mean_interval": 0.0, "intervals": []},
-            "growth_rates": {"experience": [], "coherence": [], "resonance": []},
+            "growth_rates": {
+                "experience": [],
+                "coherence": [],
+                "resonance": [],
+            },
         }
 
         # Analyze event distribution

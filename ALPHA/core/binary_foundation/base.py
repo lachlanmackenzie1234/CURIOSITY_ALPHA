@@ -165,7 +165,10 @@ class EnvironmentalState:
 
             # Update stability fields
             self.stability_fields.update(
-                {"cpu": 1.0 - (cpu_percent / 100), "memory": 1.0 - (memory.percent / 100)}
+                {
+                    "cpu": 1.0 - (cpu_percent / 100),
+                    "memory": 1.0 - (memory.percent / 100),
+                }
             )
         except Exception as e:
             print(f"Environmental observation error: {e}")
@@ -611,7 +614,12 @@ class Binary:
 
             # Update cache with timestamp
             self._update_cache(
-                type_str, (len(self._data) - len(pattern_data), pattern_info, time.time())
+                type_str,
+                (
+                    len(self._data) - len(pattern_data),
+                    pattern_info,
+                    time.time(),
+                ),
             )
 
         except Exception as e:
@@ -626,7 +634,9 @@ class Binary:
         self._pattern_cache[key] = value
 
     def decode_pattern(
-        self, pattern_type_or_pos: Union[str, int], data: Optional[bytes] = None
+        self,
+        pattern_type_or_pos: Union[str, int],
+        data: Optional[bytes] = None,
     ) -> Optional[Union[Tuple[str, float, bytes], PatternInfo]]:
         """Decode a pattern from binary data."""
         try:
@@ -635,10 +645,18 @@ class Binary:
                 pos = pattern_type_or_pos
 
                 # Check cache first
-                for type_str, (cached_pos, info, _) in self._pattern_cache.items():
+                for type_str, (
+                    cached_pos,
+                    info,
+                    _,
+                ) in self._pattern_cache.items():
                     if cached_pos == pos:
                         # Update access timestamp
-                        self._pattern_cache[type_str] = (pos, info, time.time())
+                        self._pattern_cache[type_str] = (
+                            pos,
+                            info,
+                            time.time(),
+                        )
                         return info
 
                 # Ensure we have enough data
@@ -669,7 +687,9 @@ class Binary:
 
                 # Create pattern info
                 pattern_info = PatternInfo(
-                    type_code=type_str, confidence=confidence, data=pattern_data
+                    type_code=type_str,
+                    confidence=confidence,
+                    data=pattern_data,
                 )
 
                 # Update cache

@@ -7,4 +7,4 @@ export PYTHONPATH=/Users/lachlanmackenzie/Curiosity/src
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Run the test runner with all arguments passed through
-python3 "${SCRIPT_DIR}/test_runner.py" "$@" 
+python3 "${SCRIPT_DIR}/test_runner.py" "$@"

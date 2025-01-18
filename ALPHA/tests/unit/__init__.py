@@ -1,1 +1,1 @@
-"""Unit tests for ALPHA components.""" 
+"""Unit tests for ALPHA components."""

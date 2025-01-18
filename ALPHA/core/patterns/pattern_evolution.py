@@ -147,7 +147,9 @@ class KymaState:
         self.learn_pattern_archetype(target_pattern, target_domain)
 
     def integrate_memory_space(
-        self, spatial_pattern: Dict[str, float], memory_metrics: "MemoryMetrics"
+        self,
+        spatial_pattern: Dict[str, float],
+        memory_metrics: "MemoryMetrics",
     ) -> None:
         """Integrate Memory Palace spatial patterns into wave-based temporal structure."""
         # Extract temporal qualities from spatial relationships
@@ -349,7 +351,10 @@ class TimeWarp:
         base_states = [
             (env_factor * pattern.resonance_frequency, 0.4),  # Primary state
             (stability_factor * self.base_frequency, 0.3),  # Stability state
-            (harmonic_factor * pattern.resonance_frequency, 0.3),  # Harmonic state
+            (
+                harmonic_factor * pattern.resonance_frequency,
+                0.3,
+            ),  # Harmonic state
         ]
 
         # Add crystallization-induced states
@@ -948,7 +953,10 @@ class PatternEvolution:
             return False
 
     def _calculate_success_rate(
-        self, data: np.ndarray, behavior: Dict[str, float], natural_patterns: List[NaturalPattern]
+        self,
+        data: np.ndarray,
+        behavior: Dict[str, float],
+        natural_patterns: List[NaturalPattern],
     ) -> float:
         """Calculate success rate based on expected behavior."""
         try:
@@ -1209,7 +1217,9 @@ class PatternEvolution:
             return 0.0
 
     def _calculate_stability(
-        self, data: np.ndarray, natural_patterns: Optional[List[NaturalPattern]] = None
+        self,
+        data: np.ndarray,
+        natural_patterns: Optional[List[NaturalPattern]] = None,
     ) -> float:
         """Calculate pattern stability."""
         try:
@@ -1321,7 +1331,10 @@ class PatternEvolution:
             return False
 
     def _detect_bloom_potential(
-        self, pattern: NaturalPattern, current_data: np.ndarray, state: EvolutionState
+        self,
+        pattern: NaturalPattern,
+        current_data: np.ndarray,
+        state: EvolutionState,
     ) -> float:
         """Detect potential for rare and beautiful pattern variations."""
         try:
@@ -1395,7 +1408,10 @@ class PatternEvolution:
         )
 
     def _nurture_potential_bloom(
-        self, pattern: NaturalPattern, environment: BloomEnvironment, state: EvolutionState
+        self,
+        pattern: NaturalPattern,
+        environment: BloomEnvironment,
+        state: EvolutionState,
     ) -> None:
         """Nurture a pattern's potential to bloom."""
         try:
@@ -1424,7 +1440,8 @@ class PatternEvolution:
             # Allow supporting patterns to influence bloom potential
             for supporter in environment.nurturing_patterns:
                 supporting_pattern = next(
-                    (p for p in state.natural_patterns if p.name == supporter), None
+                    (p for p in state.natural_patterns if p.name == supporter),
+                    None,
                 )
                 if supporting_pattern:
                     pattern.bloom_potential = max(
@@ -1447,7 +1464,10 @@ class PatternEvolution:
             self.logger.error(f"Error nurturing potential bloom: {str(e)}")
 
     def _handle_pattern_variation(
-        self, pattern: NaturalPattern, variation_data: np.ndarray, state: EvolutionState
+        self,
+        pattern: NaturalPattern,
+        variation_data: np.ndarray,
+        state: EvolutionState,
     ) -> None:
         """Handle a pattern variation with memory palace and temporal integration."""
         try:

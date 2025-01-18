@@ -2,6 +2,7 @@
 """Test script for ALPHA self-analysis."""
 
 import unittest
+
 from ALPHA.core.alpha_self_analysis import ALPHASelfAnalysis
 
 
@@ -23,11 +24,11 @@ class TestALPHASelfAnalysis(unittest.TestCase):
         """Test codebase analysis functionality."""
         results = self.analysis.analyze_codebase("ALPHA/core")
         self.assertIsNotNone(results)
-        self.assertIn('files_analyzed', results)
-        self.assertIn('patterns_identified', results)
-        self.assertIn('translation_effectiveness', results)
-        self.assertIn('learning_metrics', results)
+        self.assertIn("files_analyzed", results)
+        self.assertIn("patterns_identified", results)
+        self.assertIn("translation_effectiveness", results)
+        self.assertIn("learning_metrics", results)
 
 
-if __name__ == '__main__':
-    unittest.main() 
+if __name__ == "__main__":
+    unittest.main()

@@ -25,4 +25,4 @@ ls -t | tail -n +6 | xargs -I {} rm -f {}
 
 echo "Backup complete: $BACKUP_DIR/$BACKUP_NAME.tar.gz"
 echo "Remaining backups:"
-ls -lh "$BACKUP_DIR" 
+ls -lh "$BACKUP_DIR"

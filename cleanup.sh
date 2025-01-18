@@ -24,4 +24,4 @@ touch ALPHA/utils/__init__.py
 
 # Show final directory structure
 echo "\nFinal directory structure:"
-ls -R ALPHA/ 
+ls -R ALPHA/

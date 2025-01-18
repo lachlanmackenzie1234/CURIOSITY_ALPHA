@@ -12,4 +12,4 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 # Set environment variable for test configuration
-os.environ["ALPHA_TEST_MODE"] = "1" 
+os.environ["ALPHA_TEST_MODE"] = "1"

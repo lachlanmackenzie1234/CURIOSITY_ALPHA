@@ -117,7 +117,29 @@ class Pulse:
     _shared_state: Optional[PulseState] = None
     _lock = threading.Lock()
     _last_hardware_state: Optional[HardwareState] = None
-    _process = psutil.Process()  # Current process for IO monitoring
+    _process = psutil.Process()
+    _metal_bridge = None  # Metal-optimized bridge
+
+    @classmethod
+    def connect_to_prism(cls) -> None:
+        """Connect to PRISM visualization bridge using Metal optimization."""
+        try:
+            from PRISM.SPECTRUM.visual.unity.metal_bridge import bridge
+
+            cls._metal_bridge = bridge
+            print("Connected to Metal-optimized PRISM bridge")
+            sys.stdout.flush()
+        except ImportError as e:
+            print(f"Could not connect to Metal bridge, falling back to WebSocket: {e}")
+            # Fallback to WebSocket bridge
+            try:
+                from PRISM.SPECTRUM.visual.unity.prism_unity_bridge import bridge
+
+                cls._prism_bridge = bridge
+                print("Connected to WebSocket PRISM bridge")
+            except ImportError as e2:
+                print(f"Could not connect to fallback bridge: {e2}")
+            sys.stdout.flush()
 
     def sense_hardware(self) -> Dict[str, int]:
         """Sense hardware state changes as pure binary sequences."""
@@ -154,6 +176,44 @@ class Pulse:
             hardware_states = self.sense_hardware()
             alpha_states = self.sense_alpha()
 
+            # Create combined state data
+            states = {"hardware": hardware_states, "alpha": alpha_states}
+
+            # Send to Metal bridge if connected
+            if self._metal_bridge is not None:
+                try:
+                    # Map hardware states to spatial patterns
+                    self._metal_bridge.write_pattern(
+                        "spatial",
+                        {
+                            "cpu": states["hardware"].get("cpu", 0),
+                            "memory": states["hardware"].get("memory", 0),
+                        },
+                    )
+
+                    # Map ALPHA states to temporal and spectral patterns
+                    self._metal_bridge.write_pattern(
+                        "temporal",
+                        {
+                            "threads": states["alpha"].get("threads", 0),
+                            "files": states["alpha"].get("files", 0),
+                        },
+                    )
+
+                    self._metal_bridge.write_pattern(
+                        "spectral", {"erosion": states["alpha"].get("erosion", 0)}
+                    )
+                except Exception as e:
+                    print(f"Error sending to Metal bridge: {e}")
+                    sys.stdout.flush()
+            # Fallback to WebSocket bridge
+            elif self._prism_bridge is not None:
+                try:
+                    self._prism_bridge.broadcast_binary_pulse(states)
+                except Exception as e:
+                    print(f"Error sending to WebSocket bridge: {e}")
+                    sys.stdout.flush()
+
             # Notify stream connections
             for stream_name, stream in state.streams.items():
                 for connection in state.connections[stream_name]:
@@ -163,7 +223,7 @@ class Pulse:
                         print(f"Connection error for {stream_name}: {e}")
                         sys.stdout.flush()
 
-            return {"hardware": hardware_states, "alpha": alpha_states}
+            return states
 
         except Exception as e:
             print(f"Error during sensing: {e}")
@@ -280,7 +340,13 @@ class Pulse:
         try:
             # Ensure we have a valid hardware state first
             if not self._last_hardware_state:
-                return {"cpu": 0, "memory": 0, "threads": 0, "files": 0, "erosion": 0}
+                return {
+                    "cpu": 0,
+                    "memory": 0,
+                    "threads": 0,
+                    "files": 0,
+                    "erosion": 0,
+                }
 
             process = psutil.Process()
             state = self.get_shared_state()
@@ -357,7 +423,13 @@ class Pulse:
 
         except Exception as e:
             print(f"ALPHA sensing error: {e}")
-            return {"cpu": 0, "memory": 0, "threads": 0, "files": 0, "erosion": 0}
+            return {
+                "cpu": 0,
+                "memory": 0,
+                "threads": 0,
+                "files": 0,
+                "erosion": 0,
+            }
 
     @classmethod
     def get_shared_state(cls) -> PulseState:
@@ -383,6 +455,8 @@ def observe() -> None:
 
     try:
         pulse = Pulse()
+        # Connect to PRISM bridge
+        pulse.connect_to_prism()
         state = pulse.get_shared_state()
 
         print("\nOpening binary streams...")
@@ -416,7 +490,13 @@ def observe() -> None:
                     # Print ALPHA states
                     print("| ALPHA:", end=" ")
                     for component, value in states["alpha"].items():
-                        if component in ["cpu", "memory", "threads", "files", "erosion"]:
+                        if component in [
+                            "cpu",
+                            "memory",
+                            "threads",
+                            "files",
+                            "erosion",
+                        ]:
                             print(f"{component}:{value}", end=" ")
                     sys.stdout.flush()
                 time.sleep(0.1)

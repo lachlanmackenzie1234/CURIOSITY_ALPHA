@@ -1,0 +1,85 @@
+#pragma kernel ProcessPatterns
+
+// Buffer structures
+struct PatternData {
+    float3 position;
+    float intensity;
+    float phase;
+    float frequency;
+    uint patternType;
+};
+
+// Buffers
+RWStructuredBuffer<PatternData> patterns;
+RWTexture2D<float4> Result;
+
+// Parameters
+float deltaTime;
+float3 dimensions;
+int patternCount;
+
+// Utility functions
+float3 calculatePatternField(PatternData pattern, float3 position) {
+    float3 offset = position - pattern.position;
+    float distance = length(offset);
+    float3 field = float3(0, 0, 0);
+
+    switch(pattern.patternType) {
+        case 1: // Spatial (0x01) - Radial waves with distance-based interference
+            field = normalize(offset) * pattern.intensity *
+                   sin(distance * pattern.frequency + pattern.phase) *
+                   exp(-distance * 0.5);
+            break;
+
+        case 2: // Temporal (0x02) - Time-modulated spiral patterns
+            float angle = atan2(offset.y, offset.x);
+            float spiral = angle + distance * pattern.frequency + _Time.y * pattern.phase;
+            field = float3(
+                cos(spiral) * pattern.intensity,
+                sin(spiral) * pattern.intensity,
+                0
+            ) * exp(-distance);
+            break;
+
+        case 3: // Spectral (0x03) - Frequency-based standing waves
+            float standing = cos(pattern.frequency * distance) *
+                           sin(pattern.phase * _Time.y);
+            field = normalize(offset) * pattern.intensity *
+                   standing * exp(-distance * 0.3);
+            break;
+
+        default: // Fallback to original behavior
+            field = normalize(offset) * pattern.intensity *
+                   exp(-distance * pattern.frequency);
+    }
+
+    return field;
+}
+
+[numthreads(8,8,1)]
+void ProcessPatterns (uint3 id : SV_DispatchThreadID)
+{
+    // Convert pixel coordinates to simulation space
+    float3 position = float3(
+        (float)id.x / dimensions.x,
+        (float)id.y / dimensions.y,
+        0
+    );
+
+    // Initialize field
+    float3 field = float3(0, 0, 0);
+
+    // Accumulate pattern influences
+    for (int i = 0; i < patternCount; i++) {
+        field += calculatePatternField(patterns[i], position);
+    }
+
+    // Output visualization
+    float fieldIntensity = length(field);
+    Result[id.xy] = float4(
+        field.x / fieldIntensity,
+        field.y / fieldIntensity,
+        field.z / fieldIntensity,
+        fieldIntensity
+    );
+}

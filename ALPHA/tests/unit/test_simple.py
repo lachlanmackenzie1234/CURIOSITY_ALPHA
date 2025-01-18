@@ -1,9 +1,10 @@
 """Unit tests for basic ALPHA functionality."""
 
 import unittest
+
 from ALPHA.core.binary_foundation.base import Binary
-from ALPHA.core.translation.translator import BinaryTranslator
 from ALPHA.core.patterns.adaptive import Adaptive
+from ALPHA.core.translation.translator import BinaryTranslator
 
 
 class TestBasicFunctionality(unittest.TestCase):
@@ -24,7 +25,7 @@ class TestBasicFunctionality(unittest.TestCase):
         code = "def test(): return 42"
         pattern, metrics = translator.to_binary(code)
         self.assertIsInstance(pattern, Binary)
-        self.assertIn('confidence', metrics)
+        self.assertIn("confidence", metrics)
 
     def test_adaptive(self):
         """Test adaptive functionality."""
@@ -36,5 +37,5 @@ class TestBasicFunctionality(unittest.TestCase):
         self.assertIn(pattern_id, adaptive.success_rates)
 
 
-if __name__ == '__main__':
-    unittest.main() 
+if __name__ == "__main__":
+    unittest.main()

@@ -2,4 +2,4 @@
 
 from .translator import BinaryTranslator
 
-__all__ = ['BinaryTranslator']
+__all__ = ["BinaryTranslator"]

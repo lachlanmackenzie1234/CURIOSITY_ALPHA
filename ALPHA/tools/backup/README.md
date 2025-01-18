@@ -75,4 +75,4 @@ git reset --hard origin/main  # Reset to remote version
 ```bash
 cd ~/ALPHA_Backups
 tar -xzf ALPHA_backup_YYYYMMDD_HHMMSS.tar.gz
-``` 
+```

@@ -254,7 +254,11 @@ class MemoryBlock:
 class MemoryOrganizer:
     """Organizes and manages memory blocks with enhanced features and experiential evolution."""
 
-    def __init__(self, initial_block_size: int = 4096, persistence_path: Optional[str] = None):
+    def __init__(
+        self,
+        initial_block_size: int = 4096,
+        persistence_path: Optional[str] = None,
+    ):
         """Initialize memory organizer."""
         self.blocks: List[MemoryBlock] = []
         self.reference_map: Dict[str, List[int]] = {}
@@ -541,7 +545,11 @@ class MemoryOrganizer:
                 # Try to find a block with enough space
                 for block_index, block in enumerate(self.blocks):
                     if block.has_space(data_size):
-                        if block.write(pattern["data"], pattern["ref"], pattern["importance"]):
+                        if block.write(
+                            pattern["data"],
+                            pattern["ref"],
+                            pattern["importance"],
+                        ):
                             self._update_reference_map(pattern["ref"], block_index)
                             reallocated.add(pattern["ref"])
 

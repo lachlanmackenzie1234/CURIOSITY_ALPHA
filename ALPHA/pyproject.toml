@@ -16,4 +16,4 @@ dependencies = [
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short"
-pythonpath = ["."] 
+pythonpath = ["."]

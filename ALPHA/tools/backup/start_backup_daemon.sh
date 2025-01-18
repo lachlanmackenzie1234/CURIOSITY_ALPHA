@@ -12,10 +12,10 @@ start_daemon() {
         echo "Backup daemon is already running."
         return
     fi
-    
+
     # Start the backup monitor in the background
     nohup "$BACKUP_SCRIPT" monitor >> "$LOG_FILE" 2>&1 &
-    
+
     # Save the PID
     echo $! > "$PID_FILE"
     echo "Backup daemon started. PID: $(cat "$PID_FILE")"
@@ -28,7 +28,7 @@ stop_daemon() {
         echo "Backup daemon is not running."
         return
     fi
-    
+
     # Kill the process
     kill $(cat "$PID_FILE")
     rm -f "$PID_FILE"
@@ -67,4 +67,4 @@ case "$1" in
         echo "Usage: $0 {start|stop|restart|status}"
         exit 1
         ;;
-esac 
+esac

@@ -7,4 +7,4 @@ python3 -m pip install -r requirements.txt
 python3 -m pip install -e .
 
 # Run tests with coverage
-python3 -m pytest tests/ -v --cov=core --cov-report=term-missing 
+python3 -m pytest tests/ -v --cov=core --cov-report=term-missing

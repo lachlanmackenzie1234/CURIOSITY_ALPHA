@@ -1,7 +1,7 @@
 """Tests for the Adaptive class."""
 
-from ALPHA.core.patterns.adaptive import Adaptive
 from ALPHA.core.binary_foundation.base import Binary
+from ALPHA.core.patterns.adaptive import Adaptive
 
 
 def test_learn():

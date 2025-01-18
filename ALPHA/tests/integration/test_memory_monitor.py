@@ -24,7 +24,10 @@ class TestMemoryMonitor(unittest.TestCase):
 
         # Update metrics
         self.monitor.update_metrics(
-            cpu_usage=50.0, memory_usage=60.0, pattern_rate=100.0, error_rate=0.01
+            cpu_usage=50.0,
+            memory_usage=60.0,
+            pattern_rate=100.0,
+            error_rate=0.01,
         )
 
         # Get metrics
@@ -47,14 +50,20 @@ class TestMemoryMonitor(unittest.TestCase):
 
         # Test good health
         self.monitor.update_metrics(
-            cpu_usage=20.0, memory_usage=30.0, pattern_rate=100.0, error_rate=0.01
+            cpu_usage=20.0,
+            memory_usage=30.0,
+            pattern_rate=100.0,
+            error_rate=0.01,
         )
         status = self.monitor.get_system_status()
         self.assertGreater(status["health_score"], 0.7)
 
         # Test degraded health
         self.monitor.update_metrics(
-            cpu_usage=90.0, memory_usage=95.0, pattern_rate=50.0, error_rate=0.5
+            cpu_usage=90.0,
+            memory_usage=95.0,
+            pattern_rate=50.0,
+            error_rate=0.5,
         )
         status = self.monitor.get_system_status()
         self.assertLess(status["health_score"], 0.5)
@@ -66,7 +75,10 @@ class TestMemoryMonitor(unittest.TestCase):
         # Update with stable metrics
         for _ in range(5):
             self.monitor.update_metrics(
-                cpu_usage=50.0, memory_usage=50.0, pattern_rate=100.0, error_rate=0.01
+                cpu_usage=50.0,
+                memory_usage=50.0,
+                pattern_rate=100.0,
+                error_rate=0.01,
             )
 
         status = self.monitor.get_system_status()
@@ -90,7 +102,10 @@ class TestMemoryMonitor(unittest.TestCase):
 
         # Test high error rate
         self.monitor.update_metrics(
-            cpu_usage=50.0, memory_usage=50.0, pattern_rate=100.0, error_rate=0.5  # High error rate
+            cpu_usage=50.0,
+            memory_usage=50.0,
+            pattern_rate=100.0,
+            error_rate=0.5,  # High error rate
         )
 
         status = self.monitor.get_system_status()

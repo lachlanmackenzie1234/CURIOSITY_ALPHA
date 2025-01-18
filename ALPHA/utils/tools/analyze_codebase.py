@@ -76,12 +76,8 @@ class CodebaseAnalyzer:
                     report.append(
                         f"- Consider consolidating similar patterns in category '{category}'"
                     )
-            report.append(
-                "- Review files with unique patterns for potential refactoring"
-            )
-            report.append(
-                "- Look for opportunities to standardize similar code structures"
-            )
+            report.append("- Review files with unique patterns for potential refactoring")
+            report.append("- Look for opportunities to standardize similar code structures")
         else:
             report.append("No specific recommendations at this time.")
 

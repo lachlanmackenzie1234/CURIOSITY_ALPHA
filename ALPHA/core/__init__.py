@@ -14,4 +14,10 @@ from .execution.engine import ExecutionEngine
 from .memory.space import MemoryOrganizer
 from .patterns.neural_pattern import NeuralPattern
 
-__all__ = ["create_alpha", "ALPHACore", "MemoryOrganizer", "ExecutionEngine", "NeuralPattern"]
+__all__ = [
+    "create_alpha",
+    "ALPHACore",
+    "MemoryOrganizer",
+    "ExecutionEngine",
+    "NeuralPattern",
+]

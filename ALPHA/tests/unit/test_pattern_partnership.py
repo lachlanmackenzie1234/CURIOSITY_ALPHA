@@ -76,7 +76,9 @@ class TestPatternPartnership:
         ]
 
     def test_partnership_metrics(
-        self, pattern_core: BinaryPatternCore, test_patterns: List[BinaryPattern]
+        self,
+        pattern_core: BinaryPatternCore,
+        test_patterns: List[BinaryPattern],
     ) -> None:
         """Test partnership metrics calculation and preservation."""
         pattern1, pattern2 = test_patterns[:2]

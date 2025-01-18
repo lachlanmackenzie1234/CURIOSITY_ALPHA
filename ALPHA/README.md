@@ -25,4 +25,4 @@
 - `utils/` - Utility functions and helper modules
 
 ### Examples
-- `examples/` - Example code and usage demonstrations 
+- `examples/` - Example code and usage demonstrations

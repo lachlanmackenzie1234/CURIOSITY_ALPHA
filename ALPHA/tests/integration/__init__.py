@@ -1,1 +1,1 @@
-"""Integration tests for ALPHA system.""" 
+"""Integration tests for ALPHA system."""

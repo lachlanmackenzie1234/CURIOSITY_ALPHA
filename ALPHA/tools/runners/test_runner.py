@@ -5,35 +5,32 @@ integration tests, and performance tests for the ALPHA system. It includes
 detailed reporting and metrics collection.
 """
 
-import sys
-import time
 import asyncio
 import logging
+import sys
+import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
-from dataclasses import dataclass, field
 
 # Core imports
 from ALPHA.core.interface import ALPHACore
 from ALPHA.core.monitor import Monitor
+from ALPHA.tests.integration import test_alpha, test_interface, test_memory_monitor
 
 # Test imports - split into multiple lines for readability
 from ALPHA.tests.unit import (
     test_binary_core,
-    test_pattern_evolution,
     test_neural_pattern,
-    test_smoke
-)
-from ALPHA.tests.integration import (
-    test_alpha,
-    test_interface,
-    test_memory_monitor
+    test_pattern_evolution,
+    test_smoke,
 )
 
 
 @dataclass
 class TestMetrics:
     """Metrics collected during test execution."""
+
     execution_time: float = 0.0
     memory_usage: float = 0.0
     pattern_count: int = 0
@@ -44,6 +41,7 @@ class TestMetrics:
 @dataclass
 class TestResult:
     """Results of a test run."""
+
     name: str
     passed: int = 0
     failed: int = 0
@@ -79,9 +77,7 @@ class TestRunner:
         """Set up logging configuration."""
         logger = logging.getLogger("ALPHA.TestRunner")
         handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
@@ -98,26 +94,10 @@ class TestRunner:
 
             # Create test suite
             suite = unittest.TestSuite()
-            suite.addTests(
-                unittest.defaultTestLoader.loadTestsFromModule(
-                    test_binary_core
-                )
-            )
-            suite.addTests(
-                unittest.defaultTestLoader.loadTestsFromModule(
-                    test_pattern_evolution
-                )
-            )
-            suite.addTests(
-                unittest.defaultTestLoader.loadTestsFromModule(
-                    test_neural_pattern
-                )
-            )
-            suite.addTests(
-                unittest.defaultTestLoader.loadTestsFromModule(
-                    test_smoke
-                )
-            )
+            suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(test_binary_core))
+            suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(test_pattern_evolution))
+            suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(test_neural_pattern))
+            suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(test_smoke))
 
             # Run tests
             runner = unittest.TextTestRunner(verbosity=2)
@@ -147,17 +127,9 @@ class TestRunner:
 
             # Create test suite
             suite = unittest.TestSuite()
-            suite.addTests(
-                unittest.defaultTestLoader.loadTestsFromModule(test_alpha)
-            )
-            suite.addTests(
-                unittest.defaultTestLoader.loadTestsFromModule(test_interface)
-            )
-            suite.addTests(
-                unittest.defaultTestLoader.loadTestsFromModule(
-                    test_memory_monitor
-                )
-            )
+            suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(test_alpha))
+            suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(test_interface))
+            suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(test_memory_monitor))
 
             # Run tests
             runner = unittest.TextTestRunner(verbosity=2)
@@ -172,10 +144,7 @@ class TestRunner:
             result.failed += 1
             msg = "Error running integration tests: {}"
             result.errors.append(msg.format(str(e)))
-            self.logger.error(
-                "Integration test execution failed",
-                exc_info=True
-            )
+            self.logger.error("Integration test execution failed", exc_info=True)
 
         result.end_time = time.time()
         return result
@@ -194,7 +163,7 @@ class TestRunner:
                 "def test(): return 42",
                 bytes([i % 256 for i in range(1024)]),
                 [1, 1, 2, 3, 5, 8, 13, 21],
-                {"type": "test", "data": b"test data"}
+                {"type": "test", "data": b"test data"},
             ]
 
             # Process test inputs
@@ -208,14 +177,10 @@ class TestRunner:
             # Collect metrics
             metrics = self.monitor.get_metrics()
             result.metrics.execution_time = time.time() - start_time
-            result.metrics.memory_usage = metrics['memory_usage']
-            result.metrics.pattern_count = metrics['pattern_count']
-            success_count = sum(
-                1 for r in results if r['status'] == 'success'
-            )
-            error_count = sum(
-                1 for r in results if r['status'] == 'error'
-            )
+            result.metrics.memory_usage = metrics["memory_usage"]
+            result.metrics.pattern_count = metrics["pattern_count"]
+            success_count = sum(1 for r in results if r["status"] == "success")
+            error_count = sum(1 for r in results if r["status"] == "error")
             result.metrics.success_rate = success_count / len(results)
             result.metrics.error_rate = error_count / len(results)
 
@@ -240,10 +205,7 @@ class TestRunner:
             result.failed += 1
             msg = "Error running performance tests: {}"
             result.errors.append(msg.format(str(exc)))
-            self.logger.error(
-                "Performance test execution failed",
-                exc_info=True
-            )
+            self.logger.error("Performance test execution failed", exc_info=True)
 
         finally:
             self.monitor.stop()
@@ -256,7 +218,7 @@ class TestRunner:
         report = [
             "\nALPHA System Test Report",
             "=" * 50,
-            f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n",
         ]
 
         total_passed = 0
@@ -264,32 +226,32 @@ class TestRunner:
         total_time = 0.0
 
         for test_name, result in self.results.items():
-            report.extend([
-                f"\n{test_name}:",
-                "-" * len(test_name),
-                f"Passed: {result.passed}",
-                f"Failed: {result.failed}",
-                f"Skipped: {result.skipped}",
-                f"Duration: {result.duration():.2f}s",
-                f"Success Rate: {result.success_rate():.1%}\n"
-            ])
+            report.extend(
+                [
+                    f"\n{test_name}:",
+                    "-" * len(test_name),
+                    f"Passed: {result.passed}",
+                    f"Failed: {result.failed}",
+                    f"Skipped: {result.skipped}",
+                    f"Duration: {result.duration():.2f}s",
+                    f"Success Rate: {result.success_rate():.1%}\n",
+                ]
+            )
 
             if result.errors:
-                report.extend([
-                    "Errors:",
-                    *[f"- {error}" for error in result.errors],
-                    ""
-                ])
+                report.extend(["Errors:", *[f"- {error}" for error in result.errors], ""])
 
-            if hasattr(result, 'metrics'):
-                report.extend([
-                    "Metrics:",
-                    f"- Execution Time: {result.metrics.execution_time:.2f}s",
-                    f"- Memory Usage: {result.metrics.memory_usage:.1f}MB",
-                    f"- Pattern Count: {result.metrics.pattern_count}",
-                    f"- Success Rate: {result.metrics.success_rate:.1%}",
-                    f"- Error Rate: {result.metrics.error_rate:.1%}\n"
-                ])
+            if hasattr(result, "metrics"):
+                report.extend(
+                    [
+                        "Metrics:",
+                        f"- Execution Time: {result.metrics.execution_time:.2f}s",
+                        f"- Memory Usage: {result.metrics.memory_usage:.1f}MB",
+                        f"- Pattern Count: {result.metrics.pattern_count}",
+                        f"- Success Rate: {result.metrics.success_rate:.1%}",
+                        f"- Error Rate: {result.metrics.error_rate:.1%}\n",
+                    ]
+                )
 
             total_passed += result.passed
             total_failed += result.failed
@@ -297,15 +259,17 @@ class TestRunner:
 
         total_tests = total_passed + total_failed
         success_rate = total_passed / total_tests if total_tests > 0 else 0
-        report.extend([
-            "Summary:",
-            "=" * 20,
-            f"Total Tests: {total_tests}",
-            f"Total Passed: {total_passed}",
-            f"Total Failed: {total_failed}",
-            f"Overall Success Rate: {success_rate:.1%}",
-            f"Total Duration: {total_time:.2f}s\n"
-        ])
+        report.extend(
+            [
+                "Summary:",
+                "=" * 20,
+                f"Total Tests: {total_tests}",
+                f"Total Passed: {total_passed}",
+                f"Total Failed: {total_failed}",
+                f"Overall Success Rate: {success_rate:.1%}",
+                f"Total Duration: {total_time:.2f}s\n",
+            ]
+        )
 
         return "\n".join(report)
 
@@ -313,9 +277,9 @@ class TestRunner:
         """Run all tests."""
         try:
             # Run tests
-            self.results['unit'] = await self.run_unit_tests()
-            self.results['integration'] = await self.run_integration_tests()
-            self.results['performance'] = await self.run_performance_tests()
+            self.results["unit"] = await self.run_unit_tests()
+            self.results["integration"] = await self.run_integration_tests()
+            self.results["performance"] = await self.run_performance_tests()
 
             # Generate and print report
             report = self.generate_report()
@@ -327,10 +291,7 @@ class TestRunner:
             self.logger.info(f"Test report saved to {report_path}")
 
             # Return overall success
-            return all(
-                result.failed == 0
-                for result in self.results.values()
-            )
+            return all(result.failed == 0 for result in self.results.values())
 
         except Exception as exc:
             msg = f"Test execution failed: {str(exc)}"
@@ -346,4 +307,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())

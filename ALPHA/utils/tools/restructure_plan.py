@@ -27,8 +27,7 @@ class DirectoryRestructurer:
         # Learn patterns from Python files
         for file_path in self.root_dir.rglob("*.py"):
             if not any(
-                x in str(file_path)
-                for x in [".venv", "__pycache__", "site-packages", ".git"]
+                x in str(file_path) for x in [".venv", "__pycache__", "site-packages", ".git"]
             ):
                 try:
                     self.organizer.learn_from_file(str(file_path))
@@ -112,9 +111,7 @@ class DirectoryRestructurer:
 
         # Implementation Notes
         report.append("\n## Implementation Notes")
-        report.append(
-            "1. Back up your codebase before running the restructuring script"
-        )
+        report.append("1. Back up your codebase before running the restructuring script")
         report.append("2. Review the planned file movements carefully")
         report.append("3. Update import statements after restructuring")
         report.append("4. Run tests to verify functionality")

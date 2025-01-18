@@ -33,7 +33,9 @@ class BinaryPattern:
         if not self._rhythm_cache:
             self._rhythm_cache = self._detect_rhythm()
         return BinaryPattern(
-            sequence=self._rhythm_cache, timestamp=self.timestamp, source=f"{self.source}_rhythm"
+            sequence=self._rhythm_cache,
+            timestamp=self.timestamp,
+            source=f"{self.source}_rhythm",
         )
 
     def next_pulse(self) -> "BinaryPattern":
@@ -44,10 +46,14 @@ class BinaryPattern:
         if self._rhythm_cache:
             rotated = self._rhythm_cache[1:] + self._rhythm_cache[:1]
             return BinaryPattern(
-                sequence=rotated, timestamp=datetime.now(), source=f"{self.source}_pulse"
+                sequence=rotated,
+                timestamp=datetime.now(),
+                source=f"{self.source}_pulse",
             )
         return BinaryPattern(
-            sequence=self.sequence, timestamp=datetime.now(), source=f"{self.source}_pulse"
+            sequence=self.sequence,
+            timestamp=datetime.now(),
+            source=f"{self.source}_pulse",
         )
 
     def is_stable(self) -> bool:
@@ -257,7 +263,11 @@ class BinaryPatternCore:
         return self.pattern_interactions[(pattern1, pattern2)]
 
     def _calculate_partnership_strength(
-        self, sequence1: np.ndarray, sequence2: np.ndarray, resonance1: float, resonance2: float
+        self,
+        sequence1: np.ndarray,
+        sequence2: np.ndarray,
+        resonance1: float,
+        resonance2: float,
     ) -> float:
         """Calculate partnership strength between two patterns."""
         try:

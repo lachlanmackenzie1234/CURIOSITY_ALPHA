@@ -1,1 +1,1 @@
-"""Analysis and self-analysis tests for ALPHA system.""" 
+"""Analysis and self-analysis tests for ALPHA system."""

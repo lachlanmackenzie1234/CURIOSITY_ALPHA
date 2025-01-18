@@ -1,6 +1,7 @@
 """Unit tests for ALPHA pattern functionality."""
 
 import unittest
+
 from ALPHA.core.patterns.pattern import Pattern
 
 
@@ -43,5 +44,5 @@ class TestPattern(unittest.TestCase):
         self.assertEqual(restored.data, self.pattern1.data)
 
 
-if __name__ == '__main__':
-    unittest.main() 
+if __name__ == "__main__":
+    unittest.main()

@@ -1,6 +1,6 @@
 """Setup file for ALPHA package."""
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="ALPHA",
@@ -20,4 +20,4 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ],
-) 
+)

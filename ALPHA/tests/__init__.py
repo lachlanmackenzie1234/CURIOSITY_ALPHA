@@ -1,1 +1,1 @@
-"""ALPHA test suite.""" 
+"""ALPHA test suite."""

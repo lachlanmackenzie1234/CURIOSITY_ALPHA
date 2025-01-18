@@ -7,4 +7,4 @@ export PYTHONPATH=/Users/lachlanmackenzie/Curiosity/src
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Run analysis
-python3 "${SCRIPT_DIR}/run_alpha_analysis.py" "$@" 
+python3 "${SCRIPT_DIR}/run_alpha_analysis.py" "$@"

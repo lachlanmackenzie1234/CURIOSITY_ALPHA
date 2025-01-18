@@ -15,7 +15,7 @@ mkdir -p "$BACKUP_DIR"/{daily,weekly,monthly}
 create_backup() {
     local backup_name="ALPHA_${DATE}_${TIME}"
     local backup_file="$BACKUP_DIR/daily/$backup_name.tar.gz"
-    
+
     echo "Creating backup: $backup_name"
     tar -czf "$backup_file" \
         --exclude='.git' \
@@ -26,10 +26,10 @@ create_backup() {
         --exclude='*.pyc' \
         --exclude="$BACKUP_DIR" \
         ALPHA/
-    
+
     echo "$(date +%s)" > "$LAST_CHANGE_FILE"
     echo "Backup complete: $backup_name"
-    
+
     # Run retention management
     manage_retention
 }
@@ -37,14 +37,14 @@ create_backup() {
 # Function to manage backup retention
 manage_retention() {
     local current_time=$(date +%s)
-    
+
     # Process daily backups (keep 15-min backups for 24h)
     echo "Managing daily backups..."
     for backup in "$BACKUP_DIR/daily"/*.tar.gz; do
         if [ -f "$backup" ]; then
             local backup_time=$(date -r "$backup" +%s)
             local age=$((current_time - backup_time))
-            
+
             if [ $age -gt 86400 ]; then  # Older than 24h
                 # Keep only the latest backup per day
                 local backup_date=$(date -r "$backup" +%Y%m%d)
@@ -56,7 +56,7 @@ manage_retention() {
             fi
         fi
     done
-    
+
     # Process weekly backups (after 7 days, keep only one per week)
     echo "Managing weekly backups..."
     local current_week=$(date +%Y%W)
@@ -64,7 +64,7 @@ manage_retention() {
         if [ -f "$backup" ]; then
             local backup_time=$(date -r "$backup" +%s)
             local age=$((current_time - backup_time))
-            
+
             if [ $age -gt 7776000 ]; then  # Older than 90 days
                 local backup_month=$(date -r "$backup" +%Y%m)
                 if [ -f "$BACKUP_DIR/monthly/ALPHA_${backup_month}_latest.tar.gz" ]; then
@@ -84,7 +84,7 @@ manage_retention() {
             fi
         fi
     done
-    
+
     echo "Backup retention managed"
 }
 
@@ -92,13 +92,13 @@ manage_retention() {
 files_changed() {
     local current_hash=$(find ALPHA -type f -not -path "*/\.*" -exec md5sum {} \; | sort | md5sum)
     local last_hash=""
-    
+
     if [ -f "$BACKUP_DIR/.last_hash" ]; then
         last_hash=$(cat "$BACKUP_DIR/.last_hash")
     fi
-    
+
     echo "$current_hash" > "$BACKUP_DIR/.last_hash"
-    
+
     if [ "$current_hash" != "$last_hash" ]; then
         return 0  # Files changed
     else
@@ -121,10 +121,10 @@ time_since_last_change() {
 monitor_and_backup() {
     local is_active=false
     local last_backup=0
-    
+
     while true; do
         local current_time=$(date +%s)
-        
+
         if files_changed; then
             if ! $is_active; then
                 echo "Activity detected - Creating initial backup"
@@ -163,4 +163,4 @@ case "$1" in
         echo "Usage: $0 {monitor|force-backup|manage-retention}"
         exit 1
         ;;
-esac 
+esac
