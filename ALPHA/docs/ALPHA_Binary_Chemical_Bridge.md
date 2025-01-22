@@ -3,6 +3,7 @@
 ## Complete Trinity Structure
 
 ### Three-Way Bridge
+
 ```
                     Light (PRISM)
                          ↑
@@ -37,19 +38,23 @@ Binary (1/0) ←→ Harmonic (Wave) ←→ Chemical (State)
 ### Light-Binary Mappings
 
 1. **Spectral Waves**
+
    ```
    RGB ▂▅▇█▇▅▂
    Binary 01110
    ```
+
    - Color frequency mapping
    - Pixel intensity states
    - Spectrum-binary translation
 
 2. **Visual Resonance**
+
    ```
    Light → Pixel → Binary
    λ(nm) → RGB → [0,1]
    ```
+
    - Spectral decomposition
    - Digital color encoding
    - Pattern recognition
@@ -206,6 +211,7 @@ Binary (1/0) ←→ Harmonic (Wave) ←→ Chemical (State)
 ### Three-Way Resonance
 
 1. **Binary-Light-Chemical Synchronization**
+
    ```
    Binary Pulse → Light Wave → Chemical State
         ↑             ↑            ↑
@@ -236,6 +242,7 @@ Pixel Patterns    Data Patterns    Physical Patterns
 ## Enhanced Pattern Recognition
 
 ### Triple-State Analysis
+
 ```python
 class UnifiedPatternBridge:
     def __init__(self):
@@ -253,6 +260,7 @@ class UnifiedPatternBridge:
 ```
 
 ### Spectrum Processing
+
 ```python
 def analyze_spectrum(self, light_pattern):
     # Decompose light into frequency components
