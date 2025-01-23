@@ -4,7 +4,8 @@ This module implements fundamental pattern detection and tracking,
 allowing natural pattern emergence and interaction without bias.
 """
 
-from dataclasses import dataclass, field
+import time
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -161,6 +162,35 @@ class BinaryPattern:
     def __hash__(self) -> int:
         return hash(tuple(self.sequence))
 
+    def to_dict(self) -> Dict:
+        """Convert pattern to dictionary."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "BinaryPattern":
+        """Create BinaryPattern from dictionary."""
+        return cls(**data)
+
+    @classmethod
+    def merge(cls, patterns: List["BinaryPattern"]) -> "BinaryPattern":
+        """Merge multiple patterns into one."""
+        if not patterns:
+            return cls(sequence=[], timestamp=0, source="empty_merge")
+
+        # Combine sequences using XOR
+        max_len = max(len(p.sequence) for p in patterns)
+        merged = []
+        for i in range(max_len):
+            bit = 0
+            for pattern in patterns:
+                if i < len(pattern.sequence):
+                    bit ^= pattern.sequence[i]
+            merged.append(bit)
+
+        return cls(
+            sequence=merged, timestamp=max(p.timestamp for p in patterns), source="merged_patterns"
+        )
+
 
 @dataclass
 class BinaryPatternCore:
@@ -180,6 +210,17 @@ class BinaryPatternCore:
     pattern_history: List[BinaryPattern] = field(default_factory=list)
     stability_metrics: Dict[BinaryPattern, float] = field(default_factory=dict)
     reverberation_map: Dict[BinaryPattern, BinaryPattern] = field(default_factory=dict)
+
+    def __init__(self):
+        self.interaction_history = []
+        self.pattern_history = []
+        self.resonance_scores = []
+        self.raw_patterns = set()  # Store raw pattern data
+        self.pattern_sequences = {}  # Store pattern sequences by source
+        self.stability_metrics = {}  # Store stability metrics by pattern
+        self.reverberation_map = {}  # Store pattern reverberations
+        self.resonance_states = {}  # Store pattern resonance states
+        self.max_patterns = 1000
 
     def observe_raw_pattern(self, sequence: List[int], source: str = "system") -> BinaryPattern:
         """Observe a raw binary pattern without analytical bias."""
@@ -215,9 +256,26 @@ class BinaryPatternCore:
             # Natural frequency emerges from pattern structure
             frequency = np.sum(sequence_array[1:] != sequence_array[:-1]) / len(sequence_array)
 
+            # Calculate pattern entropy for complexity
+            hist, _ = np.histogram(sequence_array, bins="auto", density=True)
+            entropy = -np.sum(hist * np.log2(hist + 1e-10))
+            max_entropy = np.log2(len(hist)) if len(hist) > 0 else 1
+            normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0
+
+            # Calculate symmetry
+            half_len = len(sequence_array) // 2
+            symmetry = np.mean(sequence_array[:half_len] == sequence_array[-half_len:])
+
             # Let resonance find its natural range
             cpu_freq = psutil.cpu_freq().current / psutil.cpu_freq().max
-            resonance = (frequency + cpu_freq) / 2
+
+            # Combine metrics with natural weighting
+            resonance = (
+                frequency * 0.3  # Base frequency
+                + (1 - normalized_entropy) * 0.3  # Complexity (lower entropy is better)
+                + symmetry * 0.2  # Structural harmony
+                + cpu_freq * 0.2  # Hardware alignment
+            )
 
             self.resonance_states[pattern] = resonance
             pattern.resonance = resonance
@@ -227,40 +285,41 @@ class BinaryPatternCore:
 
         return self.resonance_states[pattern]
 
-    def track_pattern_interaction(self, pattern1: BinaryPattern, pattern2: BinaryPattern) -> float:
-        """Observe how patterns naturally interact."""
-        if (pattern1, pattern2) not in self.pattern_interactions:
-            # Calculate natural interaction strength
-            sequence1 = np.array(pattern1.sequence)
-            sequence2 = np.array(pattern2.sequence)
+    def track_pattern_interaction(self, pattern, previous_pattern=None):
+        """Track interaction between patterns and update history"""
+        if previous_pattern:
+            # Convert sequences to numpy arrays for correlation
+            current = np.array(pattern.sequence)
+            prev = np.array(previous_pattern.sequence)
 
-            # Base alignment from pattern similarity
-            alignment = np.sum(sequence1 == sequence2) / len(sequence1)
+            # Pad shorter sequence if needed
+            if len(current) != len(prev):
+                max_len = max(len(current), len(prev))
+                current = np.pad(current, (0, max_len - len(current)))
+                prev = np.pad(prev, (0, max_len - len(prev)))
 
-            # Consider resonance states
-            resonance1 = self.detect_natural_resonance(pattern1)
-            resonance2 = self.detect_natural_resonance(pattern2)
+            # Calculate correlation
+            correlation = np.corrcoef(current, prev)[0, 1]
 
-            # Calculate partnership metrics
-            partnership_strength = self._calculate_partnership_strength(
-                sequence1, sequence2, resonance1, resonance2
-            )
+            # Store interaction data
+            interaction = {
+                "timestamp": time.time(),
+                "correlation": correlation,
+                "pattern_length": len(current),
+            }
+            self.interaction_history.append(interaction)
 
-            # Let interaction strength emerge naturally
-            interaction_strength = (alignment + resonance1 + resonance2 + partnership_strength) / 4
+            # Prune history if needed
+            if len(self.interaction_history) > self.max_patterns:
+                self.interaction_history = self.interaction_history[-self.max_patterns :]
 
-            # Track continuous interaction strength
-            pattern1.interactions[pattern2] = interaction_strength
-            pattern2.interactions[pattern1] = interaction_strength
+        # Store raw pattern data
+        self.raw_patterns.add(pattern)
+        if len(self.raw_patterns) > self.max_patterns:
+            # Remove random pattern to maintain size limit
+            self.raw_patterns.pop()
 
-            self.pattern_interactions[(pattern1, pattern2)] = interaction_strength
-            self.pattern_interactions[(pattern2, pattern1)] = interaction_strength
-
-            # Update stability based on interaction
-            self._update_pattern_stability(pattern1)
-            self._update_pattern_stability(pattern2)
-
-        return self.pattern_interactions[(pattern1, pattern2)]
+        return True
 
     def _calculate_partnership_strength(
         self,

@@ -9,7 +9,7 @@ import ast
 import math
 import struct
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -176,34 +176,93 @@ class EnvironmentalState:
 
 @dataclass
 class HardwareState:
-    """Raw hardware state representation."""
+    """Hardware state as pure binary sequences."""
 
-    cpu_percent_bits: str = ""
-    memory_percent_bits: str = ""
-    io_state_bits: str = ""
-    timestamp: float = 0.0
-    boot_time_bits: str = ""
-    uptime_bits: str = ""
+    timestamp: float = field(default_factory=time.time)
+
+    # CPU state (64 bits)
+    cpu_percent_bits: str = field(default="0" * 16)
+    cpu_freq_bits: str = field(default="0" * 16)
+    cpu_ctx_bits: str = field(default="0" * 32)
+
+    # Memory state (64 bits)
+    memory_percent_bits: str = field(default="0" * 16)
+    memory_used_bits: str = field(default="0" * 32)
+    memory_free_bits: str = field(default="0" * 16)
+
+    # Disk state (64 bits)
+    disk_read_bits: str = field(default="0" * 32)
+    disk_write_bits: str = field(default="0" * 32)
+
+    # Network state (64 bits)
+    net_sent_bits: str = field(default="0" * 32)
+    net_recv_bits: str = field(default="0" * 32)
+
+    # Sensors state (64 bits)
+    temperature_bits: str = field(default="0" * 32)
+    power_bits: str = field(default="0" * 32)
+
+    # System state (64 bits)
+    boot_time_bits: str = field(default="0" * 32)
+    uptime_bits: str = field(default="0" * 32)
+
+    def __post_init__(self) -> None:
+        """Validate binary string lengths."""
+        # CPU validation
+        assert len(self.cpu_percent_bits) == 16, "CPU percent bits must be 16 bits"
+        assert len(self.cpu_freq_bits) == 16, "CPU frequency bits must be 16 bits"
+        assert len(self.cpu_ctx_bits) == 32, "CPU context bits must be 32 bits"
+
+        # Memory validation
+        assert len(self.memory_percent_bits) == 16, "Memory percent bits must be 16 bits"
+        assert len(self.memory_used_bits) == 32, "Memory used bits must be 32 bits"
+        assert len(self.memory_free_bits) == 16, "Memory free bits must be 16 bits"
+
+        # Disk validation
+        assert len(self.disk_read_bits) == 32, "Disk read bits must be 32 bits"
+        assert len(self.disk_write_bits) == 32, "Disk write bits must be 32 bits"
+
+        # Network validation
+        assert len(self.net_sent_bits) == 32, "Network sent bits must be 32 bits"
+        assert len(self.net_recv_bits) == 32, "Network received bits must be 32 bits"
+
+        # Sensors validation
+        assert len(self.temperature_bits) == 32, "Temperature bits must be 32 bits"
+        assert len(self.power_bits) == 32, "Power bits must be 32 bits"
+
+        # System validation
+        assert len(self.boot_time_bits) == 32, "Boot time bits must be 32 bits"
+        assert len(self.uptime_bits) == 32, "Uptime bits must be 32 bits"
 
     @staticmethod
     def to_binary(value: float, bits: int = 16) -> str:
         """Convert float/int to binary string representation."""
         if isinstance(value, float):
+            # Convert float to fixed-point binary
             int_value = int(value * (2**bits))
             return format(int_value & ((1 << bits) - 1), f"0{bits}b")
         else:
+            # For integers (like context switches)
             return format(value & ((1 << bits) - 1), f"0{bits}b")
 
-    def capture_state(self) -> None:
-        """Capture current hardware state."""
-        try:
-            self.timestamp = time.time()
-            self.cpu_percent_bits = self.to_binary(psutil.cpu_percent())
-            self.memory_percent_bits = self.to_binary(psutil.virtual_memory().percent)
-            self.boot_time_bits = self.to_binary(psutil.boot_time(), 32)
-            self.uptime_bits = self.to_binary(time.time() - psutil.boot_time(), 32)
-        except Exception as e:
-            print(f"Hardware state capture error: {e}")
+    def get_raw_binary(self) -> str:
+        """Get complete binary sequence of all states."""
+        return (
+            self.cpu_percent_bits
+            + self.cpu_freq_bits
+            + self.cpu_ctx_bits
+            + self.memory_percent_bits
+            + self.memory_used_bits
+            + self.memory_free_bits
+            + self.disk_read_bits
+            + self.disk_write_bits
+            + self.net_sent_bits
+            + self.net_recv_bits
+            + self.temperature_bits
+            + self.power_bits
+            + self.boot_time_bits
+            + self.uptime_bits
+        )
 
 
 @dataclass
@@ -835,16 +894,24 @@ class Binary:
 
 @dataclass
 class StateChange:
-    """Fundamental binary state changes in hardware environment."""
+    """Represents a change in system state."""
 
-    timestamp: float
+    timestamp: int
     previous_state: int
     current_state: int
     source: str
 
+    def to_dict(self) -> Dict:
+        """Convert state change to dictionary."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "StateChange":
+        """Create StateChange from dictionary."""
+        return cls(**data)
+
     def to_binary_pattern(self) -> List[int]:
-        """Convert state change to binary pattern through natural emergence."""
-        # XOR previous and current states to capture change
-        change = self.previous_state ^ self.current_state
-        # Convert to binary sequence
-        return [int(bit) for bit in bin(change)[2:].zfill(64)]
+        """Convert state change to binary pattern."""
+        # Convert state delta to binary
+        state_delta = abs(self.current_state - self.previous_state)
+        return [int(b) for b in bin(state_delta)[2:]]  # Remove '0b' prefix

@@ -9,28 +9,50 @@ import signal
 import sys
 import threading
 import time
+from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, NoReturn, Optional, Set
+from typing import Any, Callable, DefaultDict, Dict, List, NoReturn, Optional, Set
 
+import numpy as np
 import psutil
 
 from ALPHA.core.binary_foundation.base import BinaryPattern, HardwareState, PatternState
+from ALPHA.core.patterns.core_resonance import CoreResonance
+from ALPHA.core.patterns.natural_patterns import NaturalPatternDetector
+from ALPHA.core.patterns.neural_pattern import NeuralPatternNetwork
+from ALPHA.core.patterns.resonance import ResonanceField
 
 
 @dataclass
 class BinaryStream:
-    """Pure binary stream container."""
+    """Pure binary stream container with cross-stream awareness."""
 
     name: str
     sequence: str = ""  # Current binary sequence
-    history: list[str] = field(default_factory=list)  # Complete history
+    history: List[str] = field(default_factory=list)  # Complete history
     timestamp: float = 0.0
+    resonance_field: ResonanceField = field(default_factory=ResonanceField)
+    core_resonance: CoreResonance = field(default_factory=CoreResonance)
+    neural_network: NeuralPatternNetwork = field(default_factory=NeuralPatternNetwork)
+    natural_detector: NaturalPatternDetector = field(default_factory=NaturalPatternDetector)
+
+    evolution_state: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "patterns": [],  # Evolved patterns
+            "connections": set(),  # Connected streams
+            "harmony": 0.0,  # Stream harmony measure
+            "evolution_score": 0.0,  # Overall evolution metric
+            "resonance_history": [],  # Track resonance evolution
+            "pattern_bridges": set(),  # Patterns bridging streams
+        }
+    )
     meta: Dict[str, Any] = field(
         default_factory=lambda: {
             "total_samples": 0,
             "max_samples": 100000,
             "samples_archived": 0,
             "total_bits_processed": 0,
+            "cross_stream_influences": defaultdict(float),  # Track influence from other streams
         }
     )
 
@@ -39,6 +61,11 @@ class BinaryStream:
         self.sequence = bits
         self.history.append(bits)
         self.timestamp = time.time()
+        self._update_meta(bits)
+        self._evolve_patterns()
+
+    def _update_meta(self, bits: str) -> None:
+        """Update stream metadata and manage history."""
         self.meta["total_samples"] += 1
         self.meta["total_bits_processed"] += len(bits)
 
@@ -48,13 +75,89 @@ class BinaryStream:
             self.history = self.history[-(self.meta["max_samples"]) :]
             self.meta["samples_archived"] += 1
 
-            # Log compression event
-            print(f"\nStream {self.name} compressed:")
-            print(f"Total samples: {self.meta['total_samples']}")
-            print(f"Archived samples: {self.meta['samples_archived']}")
-            print(f"Current buffer: {len(self.history)} sequences")
-            print(f"Total bits processed: {self.meta['total_bits_processed']}")
-            sys.stdout.flush()
+    def _evolve_patterns(self) -> None:
+        """Allow patterns to naturally evolve within the stream."""
+        if len(self.history) < 2:
+            return
+
+        # Calculate pattern evolution
+        current = self.history[-1]
+        previous = self.history[-2]
+
+        # Pattern similarity (basic evolution metric)
+        similarity = sum(a == b for a, b in zip(current, previous)) / len(current)
+
+        # Update evolution score with momentum
+        self.evolution_state["evolution_score"] = (
+            0.7 * self.evolution_state["evolution_score"]  # Maintain momentum
+            + 0.3 * similarity  # New influence
+        )
+
+        # Track evolved patterns if significant change
+        if abs(similarity - self.evolution_state["evolution_score"]) > 0.1:
+            self.evolution_state["patterns"].append(
+                {
+                    "sequence": current,
+                    "timestamp": self.timestamp,
+                    "evolution_score": self.evolution_state["evolution_score"],
+                }
+            )
+
+    def connect_stream(self, other_stream: "BinaryStream") -> None:
+        """Establish connection with another stream."""
+        self.evolution_state["connections"].add(other_stream.name)
+        self._calculate_resonance(other_stream)
+
+    def _calculate_resonance(self, other_stream: "BinaryStream") -> None:
+        """Calculate resonance between streams using multiple detection methods."""
+        if not self.history or not other_stream.history:
+            return
+
+        # Get latest sequences
+        self_seq = self.history[-1]
+        other_seq = other_stream.history[-1]
+
+        # Core resonance calculation
+        core_score = self.core_resonance.calculate_resonance(self_seq, other_seq)
+
+        # Neural pattern matching
+        neural_score = self.neural_network.detect_pattern_similarity(self_seq, other_seq)
+
+        # Natural pattern detection
+        natural_score = self.natural_detector.detect_natural_resonance(self_seq, other_seq)
+
+        # Resonance field influence
+        field_score = self.resonance_field.calculate_field_resonance(self_seq, other_seq)
+
+        # Combine scores with weighted influence
+        resonance = (
+            0.3 * core_score  # Core binary resonance
+            + 0.3 * neural_score  # Neural pattern matching
+            + 0.2 * natural_score  # Natural pattern emergence
+            + 0.2 * field_score  # Field resonance effects
+        )
+
+        # Update resonance history with temporal decay
+        self.evolution_state["resonance_history"].append(
+            {
+                "timestamp": time.time(),
+                "stream": other_stream.name,
+                "resonance": resonance,
+                "components": {
+                    "core": core_score,
+                    "neural": neural_score,
+                    "natural": natural_score,
+                    "field": field_score,
+                },
+            }
+        )
+
+        # Track pattern bridges if strong resonance
+        if resonance > 0.7:
+            self.evolution_state["pattern_bridges"].add(other_stream.name)
+
+        # Update resonance field
+        self.resonance_field.update_field(self_seq, other_seq, resonance)
 
 
 def signal_handler(signum: int, frame: Any) -> NoReturn:
@@ -68,59 +171,132 @@ print("Initializing binary pulse module...")
 
 @dataclass
 class PulseState:
-    """Shared state for binary pulse observation."""
+    """Shared pulse state for emergent pattern interactions."""
 
-    running: bool = True
-
-    # Pure binary streams
     streams: Dict[str, BinaryStream] = field(
         default_factory=lambda: {
             "hardware": BinaryStream(name="hardware"),
-            "alpha_cpu": BinaryStream(name="alpha_cpu"),
-            "alpha_memory": BinaryStream(name="alpha_memory"),
+            "memory_patterns": BinaryStream(name="memory_patterns"),
+            "alpha": BinaryStream(name="alpha"),
             "alpha_threads": BinaryStream(name="alpha_threads"),
             "alpha_files": BinaryStream(name="alpha_files"),
             "alpha_erosion": BinaryStream(name="alpha_erosion"),
         }
     )
-
-    # Stream connections
-    connections: Dict[str, Set[Callable[[str, float], None]]] = field(
-        default_factory=lambda: {
-            "hardware": set(),
-            "alpha_cpu": set(),
-            "alpha_memory": set(),
-            "alpha_threads": set(),
-            "alpha_files": set(),
-            "alpha_erosion": set(),
-        }
-    )
+    connections: Dict[str, List[Callable]] = field(default_factory=lambda: defaultdict(list))
+    running: bool = True
 
     def __post_init__(self) -> None:
-        """Initialize memory-aware settings."""
+        """Initialize the interconnected pulse environment."""
+        # Establish core stream connections
+        self._connect_streams()
+
+        # Initialize cross-stream tracking
+        self.stream_resonance: DefaultDict[str, float] = defaultdict(
+            float
+        )  # Track resonance between streams
+        self.pattern_bridges: DefaultDict[str, Set[str]] = defaultdict(
+            set
+        )  # Patterns that bridge multiple streams
+        self.evolution_history: List[Dict[str, Any]] = []  # Track how streams influence each other
+
+        # Memory-aware settings
         try:
             mem = psutil.virtual_memory()
             total_gb = mem.total / (1024 * 1024 * 1024)
-            # Scale based on available memory (1 bit = 1 byte in Python)
-            max_len = int(min(1000000, (total_gb * 50000)))
-            print(f"Max sequence length: {max_len}")
+            self.max_sequence_length = int(min(1000000, (total_gb * 50000)))
+            print(f"Max sequence length: {self.max_sequence_length}")
             print(f"Using {total_gb:.1f}GB system memory")
-            sys.stdout.flush()
         except Exception as e:
+            self.max_sequence_length = 100000
             print(f"Using default sequence length: {e}")
-            sys.stdout.flush()
+
+    def _connect_streams(self) -> None:
+        """Establish natural connections between streams."""
+        # Connect hardware to memory patterns
+        self.streams["hardware"].connect_stream(self.streams["memory_patterns"])
+
+        # Connect memory patterns to alpha
+        self.streams["memory_patterns"].connect_stream(self.streams["alpha"])
+
+        # Connect alpha to its sub-streams
+        alpha = self.streams["alpha"]
+        alpha.connect_stream(self.streams["alpha_threads"])
+        alpha.connect_stream(self.streams["alpha_files"])
+        alpha.connect_stream(self.streams["alpha_erosion"])
+
+    def update_stream_resonance(self) -> None:
+        """Update resonance between all connected streams."""
+        total_resonance = 0.0
+        connections = 0
+
+        for stream in self.streams.values():
+            for other_name in stream.evolution_state["connections"]:
+                if other_name in self.streams:
+                    other = self.streams[other_name]
+                    stream._calculate_resonance(other)
+                    total_resonance += stream.resonance_field.calculate_field_resonance(
+                        stream.history[-1], other.history[-1]
+                    )
+                    connections += 1
+
+        # Update global resonance
+        if connections > 0:
+            self.stream_resonance["global"] = total_resonance / connections
+
+    def track_pattern_evolution(self) -> None:
+        """Track evolution of patterns across streams."""
+        timestamp = time.time()
+
+        # Collect evolution states
+        evolution_snapshot = {
+            name: stream.evolution_state.copy() for name, stream in self.streams.items()
+        }
+
+        # Track evolution history
+        self.evolution_history.append(
+            {
+                "timestamp": timestamp,
+                "states": evolution_snapshot,
+                "resonance": self.stream_resonance.copy(),
+            }
+        )
 
 
 class Pulse:
-    """Pure binary observation of system streams."""
+    """Binary pulse observer."""
 
     _shared_state: Optional[PulseState] = None
     _lock = threading.Lock()
-    _last_hardware_state: Optional[HardwareState] = None
-    _process = psutil.Process()
-    _metal_bridge = None  # Metal-optimized bridge
+
+    def __init__(self) -> None:
+        """Initialize pulse observer."""
+        self._last_hardware_state: Optional[HardwareState] = None
+        self._metal_bridge = None
+        self._prism_bridge = None
+
+        # Initialize shared state
+        self._ensure_shared_state()
+
+    def _ensure_shared_state(self) -> None:
+        """Ensure shared state is initialized."""
+        if not hasattr(self.__class__, "_shared_state") or self.__class__._shared_state is None:
+            with self.__class__._lock:
+                if (
+                    not hasattr(self.__class__, "_shared_state")
+                    or self.__class__._shared_state is None
+                ):
+                    self.__class__._shared_state = PulseState()
 
     @classmethod
+    def get_shared_state(cls) -> PulseState:
+        """Get shared pulse state, ensuring it's initialized."""
+        if not hasattr(cls, "_shared_state") or cls._shared_state is None:
+            with cls._lock:
+                if not hasattr(cls, "_shared_state") or cls._shared_state is None:
+                    cls._shared_state = PulseState()
+        return cls._shared_state
+
     def connect_to_prism(cls) -> None:
         """Connect to PRISM visualization bridge using Metal optimization."""
         try:
@@ -147,16 +323,55 @@ class Pulse:
         curr_state = self._get_hardware_state()
 
         # Get binary sequence
-        binary_sequence = curr_state.get_raw_binary()
+        binary_sequence = "".join(
+            [
+                curr_state.cpu_percent_bits,
+                curr_state.cpu_freq_bits,
+                curr_state.cpu_ctx_bits,
+                curr_state.memory_percent_bits,
+                curr_state.memory_used_bits,
+                curr_state.memory_free_bits,
+            ]
+        )
 
         # Store in stream history
         state = self.get_shared_state()
         hardware_stream = state.streams["hardware"]
         hardware_stream.append(binary_sequence)
 
-        # Get state changes
+        # Get state changes with memory emphasis
+        changes = {}
         if self._last_hardware_state:
-            changes = curr_state.diff(self._last_hardware_state)
+            # CPU changes - check all CPU metrics
+            cpu_prev = int(self._last_hardware_state.cpu_percent_bits, 2)
+            cpu_curr = int(curr_state.cpu_percent_bits, 2)
+            cpu_freq_prev = int(self._last_hardware_state.cpu_freq_bits, 2)
+            cpu_freq_curr = int(curr_state.cpu_freq_bits, 2)
+
+            # More sensitive CPU detection
+            cpu_change = (abs(cpu_curr - cpu_prev) > 3) or (abs(cpu_freq_curr - cpu_freq_prev) > 50)
+            changes["cpu"] = 1 if cpu_change else 0
+
+            # Memory changes - more sensitive detection
+            mem_prev = int(self._last_hardware_state.memory_percent_bits, 2)
+            mem_curr = int(curr_state.memory_percent_bits, 2)
+            mem_used_prev = int(self._last_hardware_state.memory_used_bits, 2)
+            mem_used_curr = int(curr_state.memory_used_bits, 2)
+            mem_free_prev = int(self._last_hardware_state.memory_free_bits, 2)
+            mem_free_curr = int(curr_state.memory_free_bits, 2)
+
+            # Detect subtle memory changes
+            mem_percent_change = abs(mem_curr - mem_prev) > 2
+            mem_used_change = abs(mem_used_curr - mem_used_prev) > 512 * 1024  # 512KB threshold
+            mem_free_change = abs(mem_free_curr - mem_free_prev) > 256 * 1024  # 256KB threshold
+
+            changes["memory"] = (
+                1 if (mem_percent_change or mem_used_change or mem_free_change) else 0
+            )
+
+            # Track memory patterns
+            if changes["memory"]:
+                self._track_memory_pattern(curr_state)
         else:
             changes = {"cpu": 0, "memory": 0}
 
@@ -164,6 +379,21 @@ class Pulse:
         self._last_hardware_state = curr_state
 
         return changes
+
+    def _track_memory_pattern(self, state: HardwareState) -> None:
+        """Track memory patterns for enhanced pattern detection."""
+        memory_sequence = "".join(
+            [state.memory_percent_bits, state.memory_used_bits, state.memory_free_bits]
+        )
+
+        # Get shared state with guaranteed initialization
+        shared_state = self.get_shared_state()
+        memory_stream = shared_state.streams["memory_patterns"]
+        memory_stream.append(memory_sequence)
+
+        # Keep only recent patterns
+        if len(memory_stream) > 1000:
+            memory_stream.pop(0)
 
     def sense(self) -> Optional[Dict[str, Dict[str, int]]]:
         """Sense all streams and return binary states."""
@@ -262,74 +492,72 @@ class Pulse:
         """Get complete hardware state as pure binary sequences."""
         state = HardwareState(timestamp=time.time())
 
-        # CPU state capture (64 bits)
         try:
+            # CPU state capture (64 bits)
             cpu_stats = psutil.cpu_stats()
             cpu_freq = psutil.cpu_freq()
 
-            state.cpu_percent_bits = HardwareState.to_binary(psutil.cpu_percent(interval=None))
-            state.cpu_freq_bits = HardwareState.to_binary(cpu_freq.current if cpu_freq else 0)
-            state.cpu_ctx_bits = HardwareState.to_binary(cpu_stats.ctx_switches, bits=32)
+            # Convert to binary strings
+            state.cpu_percent_bits = format(int(psutil.cpu_percent() * 100), "016b")
+            state.cpu_freq_bits = format(int(cpu_freq.current if cpu_freq else 0), "016b")
+            state.cpu_ctx_bits = format(cpu_stats.ctx_switches & 0xFFFFFFFF, "032b")
+
+            # Memory state capture (64 bits)
+            mem = psutil.virtual_memory()
+            state.memory_percent_bits = format(int(mem.percent * 100), "016b")
+            state.memory_used_bits = format(mem.used & 0xFFFFFFFF, "032b")
+            state.memory_free_bits = format(mem.free & 0xFFFF, "016b")
+
+            # Disk state capture (64 bits)
+            disk = psutil.disk_io_counters()
+            if disk:
+                state.disk_read_bits = format(disk.read_bytes & 0xFFFFFFFF, "032b")
+                state.disk_write_bits = format(disk.write_bytes & 0xFFFFFFFF, "032b")
+            else:
+                state.disk_read_bits = "0" * 32
+                state.disk_write_bits = "0" * 32
+
+            # Network state capture (64 bits)
+            net = psutil.net_io_counters()
+            if net:
+                state.net_sent_bits = format(net.bytes_sent & 0xFFFFFFFF, "032b")
+                state.net_recv_bits = format(net.bytes_recv & 0xFFFFFFFF, "032b")
+            else:
+                state.net_sent_bits = "0" * 32
+                state.net_recv_bits = "0" * 32
+
+            # Sensors state capture (64 bits)
+            state.temperature_bits = "0" * 32  # Default to zeros
+            state.power_bits = "0" * 32  # Default to zeros
+
+            try:
+                power = psutil.sensors_battery()
+                if power:
+                    state.power_bits = format(int(power.percent * 100), "032b")
+            except Exception:
+                pass  # Silently handle missing sensors
+
+            # System state capture (64 bits)
+            boot_time = psutil.boot_time()
+            uptime = time.time() - boot_time
+            state.boot_time_bits = format(int(boot_time) & 0xFFFFFFFF, "032b")
+            state.uptime_bits = format(int(uptime) & 0xFFFFFFFF, "032b")
+
         except Exception as e:
-            print(f"CPU sensing error: {e}")
+            self.logger.error(f"Error capturing hardware state: {e}")
+            # Initialize with zeros if error
             state.cpu_percent_bits = "0" * 16
             state.cpu_freq_bits = "0" * 16
             state.cpu_ctx_bits = "0" * 32
-
-        # Memory state capture (64 bits)
-        try:
-            mem = psutil.virtual_memory()
-            state.memory_percent_bits = HardwareState.to_binary(mem.percent)
-            state.memory_used_bits = HardwareState.to_binary(mem.used, bits=32)
-            state.memory_free_bits = HardwareState.to_binary(mem.free, bits=16)
-        except Exception as e:
-            print(f"Memory sensing error: {e}")
             state.memory_percent_bits = "0" * 16
             state.memory_used_bits = "0" * 32
             state.memory_free_bits = "0" * 16
-
-        # Disk state capture (64 bits)
-        try:
-            disk = psutil.disk_io_counters()
-            state.disk_read_bits = HardwareState.to_binary(disk.read_bytes, bits=32)
-            state.disk_write_bits = HardwareState.to_binary(disk.write_bytes, bits=32)
-        except Exception as e:
-            print(f"Disk sensing error: {e}")
             state.disk_read_bits = "0" * 32
             state.disk_write_bits = "0" * 32
-
-        # Network state capture (64 bits)
-        try:
-            net = psutil.net_io_counters()
-            state.net_sent_bits = HardwareState.to_binary(net.bytes_sent, bits=32)
-            state.net_recv_bits = HardwareState.to_binary(net.bytes_recv, bits=32)
-        except Exception as e:
-            print(f"Network sensing error: {e}")
             state.net_sent_bits = "0" * 32
             state.net_recv_bits = "0" * 32
-
-        # Sensors state capture (64 bits) - Optional based on platform
-        state.temperature_bits = "0" * 32  # Default to zeros
-        state.power_bits = "0" * 32  # Default to zeros
-
-        try:
-            # Only try battery on macOS
-            power = psutil.sensors_battery()
-            if power:
-                power_value = power.percent
-                state.power_bits = HardwareState.to_binary(power_value, bits=32)
-        except Exception as e:
-            pass  # Silently handle missing sensors
-
-        # System state capture (64 bits)
-        try:
-            boot_time = psutil.boot_time()
-            uptime = time.time() - boot_time
-
-            state.boot_time_bits = HardwareState.to_binary(boot_time, bits=32)
-            state.uptime_bits = HardwareState.to_binary(uptime, bits=32)
-        except Exception as e:
-            print(f"System sensing error: {e}")
+            state.temperature_bits = "0" * 32
+            state.power_bits = "0" * 32
             state.boot_time_bits = "0" * 32
             state.uptime_bits = "0" * 32
 
@@ -431,15 +659,6 @@ class Pulse:
                 "erosion": 0,
             }
 
-    @classmethod
-    def get_shared_state(cls) -> PulseState:
-        """Get or create shared pulse state."""
-        if cls._shared_state is None:
-            with cls._lock:
-                if cls._shared_state is None:
-                    cls._shared_state = PulseState()
-        return cls._shared_state
-
     def stop(self) -> None:
         """Gracefully exit observation."""
         state = self.get_shared_state()
@@ -535,35 +754,35 @@ def start_background_pulse() -> Optional[Pulse]:
 
 @dataclass
 class HardwareState:
-    """Raw hardware state as complete binary sequences."""
+    """Hardware state as pure binary sequences."""
 
-    # CPU state (64 bits total)
-    cpu_percent_bits: str = ""  # 16 bits - usage percent
-    cpu_freq_bits: str = ""  # 16 bits - current frequency
-    cpu_ctx_bits: str = ""  # 32 bits - context switches
+    timestamp: float
 
-    # Memory state (64 bits total)
-    memory_percent_bits: str = ""  # 16 bits - usage percent
-    memory_used_bits: str = ""  # 32 bits - used memory
-    memory_free_bits: str = ""  # 16 bits - free memory
+    # CPU state (64 bits)
+    cpu_percent_bits: str = "0" * 16
+    cpu_freq_bits: str = "0" * 16
+    cpu_ctx_bits: str = "0" * 32
 
-    # Disk state (64 bits total)
-    disk_read_bits: str = ""  # 32 bits - bytes read
-    disk_write_bits: str = ""  # 32 bits - bytes written
+    # Memory state (64 bits)
+    memory_percent_bits: str = "0" * 16
+    memory_used_bits: str = "0" * 32
+    memory_free_bits: str = "0" * 16
 
-    # Network state (64 bits total)
-    net_sent_bits: str = ""  # 32 bits - bytes sent
-    net_recv_bits: str = ""  # 32 bits - bytes received
+    # Disk state (64 bits)
+    disk_read_bits: str = "0" * 32
+    disk_write_bits: str = "0" * 32
 
-    # Sensors state (64 bits total)
-    temperature_bits: str = ""  # 32 bits - CPU temperature
-    power_bits: str = ""  # 32 bits - power consumption
+    # Network state (64 bits)
+    net_sent_bits: str = "0" * 32
+    net_recv_bits: str = "0" * 32
 
-    # System state (64 bits total)
-    boot_time_bits: str = ""  # 32 bits - system boot time
-    uptime_bits: str = ""  # 32 bits - system uptime
+    # Sensors state (64 bits)
+    temperature_bits: str = "0" * 32
+    power_bits: str = "0" * 32
 
-    timestamp: float = 0.0
+    # System state (64 bits)
+    boot_time_bits: str = "0" * 32
+    uptime_bits: str = "0" * 32
 
     @staticmethod
     def to_binary(value: float, bits: int = 16) -> str:

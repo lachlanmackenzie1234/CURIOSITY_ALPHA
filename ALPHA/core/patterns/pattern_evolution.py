@@ -615,24 +615,31 @@ class TimeWarp:
 
 @dataclass
 class NaturalPattern:
-    """Represents a fundamental natural pattern."""
+    """Represents a fundamental natural pattern that emerges naturally from the system."""
 
     name: str
-    confidence: float
-    ratio: float
     sequence: Optional[List[float]] = None
     properties: Dict[str, float] = field(default_factory=dict)
-    bloom_potential: float = 0.0  # Potential for rare, beautiful variations
-    polar_harmony: float = 0.0  # Measure of balance with opposing patterns
-    variation_history: List[Dict[str, Any]] = field(
-        default_factory=list
-    )  # Track pattern variations
-    polar_patterns: Set[str] = field(default_factory=set)  # Connected opposing patterns
     resonance_frequency: float = 0.0  # Natural frequency of the pattern
-    bloom_conditions: Dict[str, float] = field(
-        default_factory=dict
-    )  # Conditions that trigger blooms
-    time_warp: TimeWarp = field(default_factory=TimeWarp)  # Pattern's experience of time
+    variation_history: List[Dict[str, Any]] = field(default_factory=list)
+    polar_patterns: Set[str] = field(default_factory=set)
+
+    def calculate_resonance_with(self, other_pattern: "NaturalPattern") -> float:
+        """Calculate natural resonance between patterns without enforcing thresholds."""
+        if not self.sequence or not other_pattern.sequence:
+            return 0.0
+
+        # Let resonance emerge from pattern interaction
+        interaction_strength = sum(a * b for a, b in zip(self.sequence, other_pattern.sequence))
+        return interaction_strength / (len(self.sequence) * len(other_pattern.sequence))
+
+    def calculate_natural_harmony(self) -> float:
+        """Let pattern find its own harmonic state without imposed thresholds."""
+        if not self.sequence:
+            return 0.0
+
+        # Allow natural harmonic emergence
+        return sum(self.sequence) / len(self.sequence)
 
 
 @dataclass
@@ -1373,38 +1380,39 @@ class PatternEvolution:
     def _create_bloom_space(
         self, pattern: NaturalPattern, state: EvolutionState
     ) -> BloomEnvironment:
-        """Create a space conducive to pattern blooms."""
-
-        # Get resonant patterns that could support a bloom
+        """Create a space conducive to natural pattern blooms without artificial constraints."""
         resonance_harmonies = {}
         stability_fields = {}
         crystallization_points = set()
 
-        # Find patterns with strong resonance
+        # Let patterns find their natural resonance points
         for other_pattern in self.patterns:
             if other_pattern.id != pattern.id:
                 resonance = pattern.calculate_resonance_with(other_pattern)
-                if resonance > 0.7:  # High resonance threshold
+                if resonance > 0:  # Accept any positive resonance
                     resonance_harmonies[other_pattern.id] = resonance
 
-                    # Check if this creates a crystallization point
+                    # Let crystallization emerge naturally
                     harmony = pattern.calculate_natural_harmony()
                     other_harmony = other_pattern.calculate_natural_harmony()
-                    if abs(harmony - other_harmony) < 0.1:  # Similar harmony
+                    if (
+                        abs(harmony - other_harmony) < harmony
+                    ):  # Use pattern's own harmony as threshold
                         crystallization_points.add(harmony)
 
-        # Find patterns that provide stability
+        # Let stability emerge from pattern interactions
         for pattern_id in resonance_harmonies:
             other_pattern = self.get_pattern(pattern_id)
-            if other_pattern and other_pattern.stability > 0.8:  # High stability threshold
-                stability_fields[pattern_id] = other_pattern.stability
+            if other_pattern:
+                stability_fields[pattern_id] = other_pattern.calculate_natural_harmony()
 
-        # Create the bloom environment
         return BloomEnvironment(
             resonance_harmonies=resonance_harmonies,
             stability_fields=stability_fields,
             crystallization_points=crystallization_points,
-            emergence_potential=len(crystallization_points) * 0.1,
+            emergence_potential=(
+                len(crystallization_points) / len(self.patterns) if self.patterns else 0.0
+            ),
         )
 
     def _nurture_potential_bloom(

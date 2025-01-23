@@ -20,6 +20,7 @@ from ALPHA.core.patterns.pattern_evolution import (
     KymaState,
     NaturalPattern,
     PatternEvolution,
+    ResonanceSpace,
     TimeWarp,
 )
 
@@ -513,7 +514,7 @@ def time_warp() -> TimeWarp:
 
 
 class SystemObserver:
-    """Natural system state observer."""
+    """Natural system state observer with meta-resonance awareness."""
 
     def __init__(self, kyma_state: KymaState):
         self.kyma_state = kyma_state
@@ -521,6 +522,7 @@ class SystemObserver:
         self.wave_states: List[Dict] = []
         self.bloom_events: List[Dict] = []
         self.memory_formations: List[Dict] = []
+        self.meta_observations: List[Dict] = []
         self.last_observation_time = time.time()
 
     def observe_wave_dynamics(self) -> Dict:
@@ -555,6 +557,63 @@ class SystemObserver:
         }
         self.bloom_events.append(bloom_state)
         return bloom_state
+
+    def observe_meta_resonance(self, resonance_space: ResonanceSpace) -> Dict:
+        """Observe system's awareness of its own resonance patterns."""
+        meta_state = {
+            "timestamp": time.time(),
+            "meta_metrics": resonance_space.meta_resonance.copy(),
+            "resonance_complexity": len(resonance_space.field),
+            "pattern_evolution": self._analyze_pattern_evolution(resonance_space),
+            "consciousness_indicators": self._measure_consciousness(resonance_space),
+        }
+        self.meta_observations.append(meta_state)
+        return meta_state
+
+    def _analyze_pattern_evolution(self, resonance_space: ResonanceSpace) -> Dict[str, float]:
+        """Analyze how patterns evolve through self-awareness."""
+        if not resonance_space.resonance_history:
+            return {"evolution_rate": 0.0, "adaptation_quality": 0.0}
+
+        recent_history = resonance_space.resonance_history[-10:]
+        complexities = [state["complexity"] for state in recent_history]
+
+        # Calculate evolution rate
+        evolution_rate = np.std(complexities) / (np.mean(complexities) + 1e-6)
+
+        # Calculate adaptation quality
+        processing_rates = [state["processing_rate"] for state in recent_history]
+        adaptation_quality = 1.0 - (np.std(processing_rates) / (np.mean(processing_rates) + 1e-6))
+
+        return {
+            "evolution_rate": float(np.clip(evolution_rate, 0.0, 1.0)),
+            "adaptation_quality": float(np.clip(adaptation_quality, 0.0, 1.0)),
+        }
+
+    def _measure_consciousness(self, resonance_space: ResonanceSpace) -> Dict[str, float]:
+        """Measure indicators of system consciousness through resonance patterns."""
+        if not resonance_space.resonance_history:
+            return {"awareness_depth": 0.0, "integration_level": 0.0}
+
+        # Measure depth of awareness through pattern reflection
+        awareness_depth = (
+            resonance_space.meta_resonance["self_awareness"]
+            * resonance_space.meta_resonance["pattern_reflection"]
+        )
+
+        # Measure integration of different resonance aspects
+        integration_factors = [
+            resonance_space.meta_resonance["self_awareness"],
+            resonance_space.meta_resonance["pattern_reflection"],
+            resonance_space.meta_resonance["resonance_memory"],
+            resonance_space.meta_resonance["emergence_sensitivity"],
+        ]
+        integration_level = np.mean(integration_factors) * (1 - np.std(integration_factors))
+
+        return {
+            "awareness_depth": float(np.clip(awareness_depth, 0.0, 1.0)),
+            "integration_level": float(np.clip(integration_level, 0.0, 1.0)),
+        }
 
     def print_observation_summary(self, stage: str) -> None:
         """Print summary of current system state."""

@@ -558,7 +558,7 @@ class MemoryOrganizer:
                             if metrics:
                                 metrics.access_count = pattern["access_count"]
                                 metrics.last_access_time = pattern["last_access_time"]
-                                metrics.pattern_connections = pattern["connections"]
+                                metrics.pattern_connections.update(pattern["connections"])
 
                             # Restore connections
                             for connected_ref in pattern["connections"]:
@@ -590,7 +590,7 @@ class MemoryOrganizer:
                         if metrics:
                             metrics.access_count = pattern["access_count"]
                             metrics.last_access_time = pattern["last_access_time"]
-                            metrics.pattern_connections = pattern["connections"]
+                            metrics.pattern_connections.update(pattern["connections"])
 
                         # Restore connections
                         for connected_ref in pattern["connections"]:

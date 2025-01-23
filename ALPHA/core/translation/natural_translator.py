@@ -11,7 +11,7 @@ from .translator import BinaryTranslator
 
 
 class NaturalPatternTranslator(BinaryTranslator):
-    """Enhanced translator that uses natural patterns for accuracy."""
+    """Enhanced translator that allows patterns to emerge and translate naturally."""
 
     def __init__(self):
         """Initialize the natural pattern translator."""
@@ -22,15 +22,15 @@ class NaturalPatternTranslator(BinaryTranslator):
         self.resonance_profiles: Dict[str, ResonanceProfile] = {}
 
     def translate_to_binary(self, code: str) -> Binary:
-        """Translate code to binary with natural pattern preservation."""
+        """Translate code to binary while preserving natural patterns."""
         try:
-            # First extract natural patterns
+            # Extract patterns without forcing detection
             patterns = self._extract_natural_patterns(code)
 
-            # Store patterns for later use
+            # Store patterns for natural evolution
             self.natural_patterns.update(patterns)
 
-            # Calculate resonance profiles
+            # Let resonance emerge naturally
             data = np.array([ord(c) for c in code], dtype=np.uint8)
             self.resonance_profiles = self.resonance_system.analyze_pattern_interactions(
                 patterns, data
@@ -39,7 +39,7 @@ class NaturalPatternTranslator(BinaryTranslator):
             # Perform translation with pattern awareness
             binary = super().translate_to_binary(code)
 
-            # Enhance binary with pattern information
+            # Enhance binary with natural pattern information
             binary._data = self._enhance_with_patterns(binary.to_bytes(), patterns)
 
             return binary
@@ -105,21 +105,20 @@ class NaturalPatternTranslator(BinaryTranslator):
             return patterns
 
     def _enhance_with_patterns(self, binary: bytes, patterns: Dict[str, NaturalPattern]) -> bytes:
-        """Enhance binary representation with pattern information."""
+        """Enhance binary representation by preserving natural pattern information."""
         try:
-            # Convert to list for modification
             enhanced = list(binary)
 
-            # Add pattern markers with resonance information
+            # Add pattern markers based on natural resonance
             for pattern_id, pattern in patterns.items():
                 profile = self.resonance_profiles.get(pattern_id)
-                if profile and profile.harmony > 0.8:
-                    # Insert pattern marker with resonance info
+                if profile and profile.resonance > 0:  # Accept any positive resonance
+                    # Insert pattern marker with natural resonance info
                     marker = [
                         0x7F,  # Pattern marker
                         pattern.principle_type.value.encode()[0],
-                        int(profile.strength * 255),  # Resonance strength
-                        int(profile.harmony * 255),  # Resonance harmony
+                        int(profile.resonance * 255),  # Natural resonance strength
+                        int(profile.harmony * 255),  # Natural harmony level
                     ]
                     enhanced.extend(marker)
 
@@ -130,28 +129,26 @@ class NaturalPatternTranslator(BinaryTranslator):
             return binary
 
     def _extract_patterns_from_binary(self, binary: bytes) -> Dict[str, NaturalPattern]:
-        """Extract natural patterns from binary data."""
+        """Extract patterns that emerge naturally from binary data."""
         patterns = {}
         try:
-            # Convert to numpy array for analysis
             data = np.frombuffer(binary, dtype=np.uint8)
 
-            # Look for pattern markers (0x7F)
+            # Look for natural pattern markers
             marker_positions = np.where(data == 0x7F)[0]
 
             for pos in marker_positions:
                 if pos + 3 < len(data):
-                    # Get window of data after marker
+                    # Let patterns emerge from data windows
                     window_start = pos + 4
                     window_end = min(window_start + 64, len(data))
                     window = data[window_start:window_end]
 
-                    # Detect pattern in window
+                    # Detect patterns without confidence threshold
                     pattern = self.pattern_hierarchy.detect_natural_pattern(window)
-                    if pattern and pattern.confidence > 0.7:
+                    if pattern:
                         pattern_id = f"binary_pattern_{pos}"
-                        # Update pattern with resonance info
-                        pattern.resonance = data[pos + 3] / 255.0
+                        pattern.resonance = data[pos + 3] / 255.0  # Natural resonance
                         patterns[pattern_id] = pattern
 
             return patterns
