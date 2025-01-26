@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Set
 import numpy as np
 import psutil
 
+from ...NEXUS.core.adaptive_field import AdaptiveField
 from .monitor import MemoryMonitor
 
 
@@ -36,22 +37,11 @@ class MemoryMetrics:
 
     # Pattern evolution integration
     bloom_history: List[Dict[str, Any]] = field(default_factory=list)
-    evolution_state: Optional[Dict[str, float]] = None
+    evolution_state: Dict[str, float] = field(default_factory=dict)
 
-    def record_bloom(self, bloom_event: Dict[str, Any]) -> None:
-        """Record a pattern bloom event and its impact on memory."""
-        self.bloom_history.append(bloom_event)
-        # Deepen experience through significant evolution
-        self.experience_depth = min(1.0, self.experience_depth + 0.2)
-        # Increase wonder potential from novel emergence
-        self.wonder_potential = min(1.0, self.wonder_potential + 0.15)
-
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize mutable defaults and validate ranges."""
-        if self.pattern_connections is None:
-            self.pattern_connections = set()
-        if self.variation_history is None:
-            self.variation_history = {}
+        # No need to check for None since we use default_factory
 
     def update_experience(self, resonance_value: float, hardware_state: float) -> None:
         """Deepen pattern experience based on resonance and hardware state."""
@@ -72,6 +62,14 @@ class MemoryMetrics:
         """Record a new variation and its resonance strength."""
         self.variation_history[variation_id] = resonance
         self.imaginative_resonance = max(self.imaginative_resonance, resonance)
+
+    def record_bloom(self, bloom_event: Dict[str, Any]) -> None:
+        """Record a pattern bloom event and its impact on memory."""
+        self.bloom_history.append(bloom_event)
+        # Deepen experience through significant evolution
+        self.experience_depth = min(1.0, self.experience_depth + 0.2)
+        # Increase wonder potential from novel emergence
+        self.wonder_potential = min(1.0, self.wonder_potential + 0.15)
 
 
 class MemoryBlock:
@@ -251,53 +249,83 @@ class MemoryBlock:
             return []
 
 
-class MemoryOrganizer:
+class MemoryOrganizer(AdaptiveField):
     """Organizes and manages memory blocks with enhanced features and experiential evolution."""
 
     def __init__(
         self,
         initial_block_size: int = 4096,
         persistence_path: Optional[str] = None,
-    ):
+    ) -> None:
         """Initialize memory organizer."""
-        self.blocks: List[MemoryBlock] = []
-        self.reference_map: Dict[str, List[int]] = {}
-        self.block_size = initial_block_size
-        self.persistence_path = persistence_path
+        super().__init__()  # Initialize adaptive field
         self.logger = logging.getLogger("memory_organizer")
-
-        # Memory management parameters
-        self.prune_threshold = 0.2  # Lower threshold for pruning
-        self.consolidation_threshold = 0.5
-        self.last_maintenance_time = time.time()
-        self.maintenance_interval = 3600  # 1 hour
-
-        # Initialize memory monitor
+        self.blocks: List[MemoryBlock] = []
+        self.reference_map: Dict[str, List[int]] = {}  # Fixed type annotation
+        self.initial_block_size = initial_block_size
+        self.persistence_path = persistence_path
         self.monitor = MemoryMonitor()
-        self.monitor.start_monitoring()
+        self._last_maintenance = time.time()
+        self._maintenance_interval = 300  # 5 minutes
+        self.variation_limit = 10  # Maximum variations per dream cycle
+
+        # Register adaptive thresholds
+        self.register_threshold("fragmentation_limit", 0.3)
+        self.register_threshold("defrag_threshold", 0.7)
+        self.register_threshold("dream_threshold", 0.5)
+        self.register_threshold("importance_threshold", 0.4)
 
         # Load persisted patterns if available
         if persistence_path:
             self._load_persisted_patterns()
 
-        # Experiential evolution parameters
-        self.dream_threshold = 0.7  # Minimum wonder potential for dreaming
-        self.variation_limit = 5  # Maximum variations per pattern
-        self.last_dream_time = time.time()
-        self.dream_interval = 1800  # 30 minutes between dream cycles
+    async def start_monitoring(self) -> None:
+        """Start memory monitoring."""
+        self.monitor.start()
+        self._last_maintenance = time.time()
 
-    def __del__(self):
-        """Cleanup on deletion."""
-        if hasattr(self, "monitor"):
-            self.monitor.stop_monitoring()
+    async def stop_monitoring(self) -> None:
+        """Stop memory monitoring."""
+        self.monitor.stop()
 
-    def _persist_patterns(self):
+    def get_usage_percentage(self) -> float:
+        """Get current memory usage percentage."""
+        total_space = sum(block.size for block in self.blocks)
+        used_space = sum(block.used for block in self.blocks)
+        return used_space / total_space if total_space > 0 else 0.0
+
+    def get_usage_stats(self) -> Dict[str, float]:
+        """Get detailed memory usage statistics."""
+        total_space = sum(block.size for block in self.blocks)
+        used_space = sum(block.used for block in self.blocks)
+        fragmentation = self._calculate_fragmentation()
+
+        return {
+            "total_space": total_space,
+            "used_space": used_space,
+            "usage_percentage": used_space / total_space if total_space > 0 else 0.0,
+            "fragmentation": fragmentation,
+            "block_count": len(self.blocks),
+        }
+
+    def read(self, reference: str) -> List[bytes]:
+        """Read data for a reference."""
+        result: List[bytes] = []
+        if reference in self.reference_map:
+            for block_index in self.reference_map[reference]:
+                block = self.blocks[block_index]
+                data = block.read(0, block.size, reference)
+                if data:
+                    result.append(data)
+        return result
+
+    def _persist_patterns(self) -> None:
         """Persist patterns to storage."""
         try:
             if not self.persistence_path:
                 return
 
-            persistence_data = {
+            persistence_data: Dict[str, Dict] = {
                 "patterns": {},
                 "connections": {},
                 "hardware_state": {},  # Track hardware context
@@ -323,9 +351,14 @@ class MemoryOrganizer:
 
                 if data and metrics:
                     # Calculate natural mathematical relationships
-                    pattern_array = np.frombuffer(data, dtype=np.uint8)
-                    transitions = np.sum(pattern_array[1:] != pattern_array[:-1])
-                    phi_ratio = transitions / len(pattern_array) if len(pattern_array) > 0 else 0
+                    if isinstance(data, bytes):
+                        pattern_array = np.frombuffer(data, dtype=np.uint8)
+                        transitions = np.sum(pattern_array[1:] != pattern_array[:-1])
+                        phi_ratio = (
+                            transitions / len(pattern_array) if len(pattern_array) > 0 else 0
+                        )
+                    else:
+                        phi_ratio = 0.0  # Default if data is not in expected format
 
                     persistence_data["patterns"][ref] = {
                         "data": data.hex(),  # Convert bytes to hex string
@@ -334,16 +367,8 @@ class MemoryOrganizer:
                         "connections": list(metrics.pattern_connections),
                         "natural_metrics": {
                             "phi_ratio": phi_ratio,
-                            "resonance": (
-                                metrics.resonance_score
-                                if hasattr(metrics, "resonance_score")
-                                else 0.0
-                            ),
-                            "hardware_resonance": (
-                                metrics.hardware_resonance
-                                if hasattr(metrics, "hardware_resonance")
-                                else 0.0
-                            ),
+                            "resonance": metrics.resonance_stability,
+                            "hardware_resonance": metrics.phi_ratio,
                         },
                     }
 
@@ -431,7 +456,7 @@ class MemoryOrganizer:
                     time_factor = max(0.1, min(1.0, 1.0 / (1.0 + decay_factor)))
                     effective_importance = metrics.importance_score * time_factor
 
-                    if effective_importance < self.prune_threshold:
+                    if effective_importance < self.get_threshold("importance_threshold"):
                         self._deallocate_pattern(ref)
                         pruned_refs.add(ref)
 
@@ -444,20 +469,17 @@ class MemoryOrganizer:
             if self._should_defragment():
                 self.defragment()
 
-            self.last_maintenance_time = current_time
+            self._last_maintenance = current_time
 
         except Exception as e:
             self.logger.error(f"Maintenance operation failed: {str(e)}")
 
     def _should_defragment(self) -> bool:
-        """Check if defragmentation is needed."""
-        if not self.blocks:
-            return False
-
-        total_space = sum(block.size for block in self.blocks)
-        used_space = sum(block.used for block in self.blocks)
-
-        return (used_space / total_space) < self.consolidation_threshold
+        """Check if defragmentation is needed based on adaptive threshold."""
+        fragmentation = self._calculate_fragmentation()
+        # Let field observe fragmentation
+        self.sense_pressure("fragmentation_limit", fragmentation)
+        return fragmentation > self.get_threshold("defrag_threshold")
 
     def defragment(self):
         """Defragment memory blocks."""
@@ -664,17 +686,17 @@ class MemoryOrganizer:
             self.logger.error(f"Deallocation failed: {str(e)}")
             return False
 
-    def _update_reference_map(self, reference: str, block_index: int):
+    def _update_reference_map(self, reference: str, block_index: int) -> None:
         """Update reference map with block index."""
         if reference not in self.reference_map:
             self.reference_map[reference] = []
         if block_index not in self.reference_map[reference]:
             self.reference_map[reference].append(block_index)
 
-    def _check_maintenance(self):
+    def _check_maintenance(self) -> None:
         """Check if maintenance is needed and perform if necessary."""
         current_time = time.time()
-        if current_time - self.last_maintenance_time >= self.maintenance_interval:
+        if current_time - self._last_maintenance >= self._maintenance_interval:
             self._perform_maintenance()
             # Consider dreaming after maintenance
             if self._allow_dreaming():
@@ -682,64 +704,36 @@ class MemoryOrganizer:
 
     def _calculate_block_size(self, data_size: int) -> int:
         """Calculate appropriate block size for data."""
-        return max(self.block_size, data_size * 2)  # Allow for growth
+        return max(self.initial_block_size, data_size * 2)  # Allow for growth
 
     def allocate(self, data: bytes, reference: str, importance: float = 0.5) -> bool:
-        """Allocate memory for data with importance score."""
+        """Allocate memory for data with adaptive importance threshold."""
         try:
-            # Check if maintenance is needed
-            self._check_maintenance()
+            # Let field observe importance
+            self.sense_pressure("importance_threshold", importance)
 
-            # Check if pattern already exists
-            if reference in self.reference_map:
-                # Get existing metrics
-                block_indices = self.reference_map[reference]
-                if block_indices:
-                    block = self.blocks[block_indices[0]]
-                    metrics = block.get_metrics(reference)
-                    if metrics:
-                        # Keep original importance score
-                        imp_score = metrics.importance_score
-                        msg = f"Pattern {reference} exists " f"with importance {imp_score}"
-                        self.logger.debug(msg)
-                        # Update access metrics
-                        metrics.access_count += 1
-                        metrics.last_access_time = time.time()
-                        # Track cache hit
-                        self.monitor.track_cache_access(reference, True)
-                return True
-
-            msg = f"Allocating pattern {reference} " f"with importance {importance}"
-            self.logger.debug(msg)
+            if importance < self.get_threshold("importance_threshold"):
+                self.logger.debug(f"Pattern importance {importance} below threshold")
+                return False
 
             data_size = len(data)
+            block_size = self._calculate_block_size(data_size)
 
-            # Try existing blocks first
-            for i, block in enumerate(self.blocks):
-                if block.has_space(data_size):
-                    if block.write(data, reference, importance):
-                        self._update_reference_map(reference, i)
-                        # Track allocation
-                        self.monitor.track_allocation(reference, data_size, reference, importance)
-                        return True
+            # Find suitable block or create new one
+            block_index = self._find_or_create_block(block_size)
+            if block_index is None:
+                return False
 
-            # Create new block with appropriate size
-            new_size = self._calculate_block_size(data_size)
-            msg = f"New block for {reference} " f"(size: {new_size}, data: {data_size})"
-            self.logger.debug(msg)
+            # Write data and update references
+            self.blocks[block_index].write(reference, np.frombuffer(data, dtype=np.uint8))
+            self._update_reference_map(reference, block_index)
 
-            new_block = MemoryBlock(new_size)
-            if new_block.write(data, reference, importance):
-                self.blocks.append(new_block)
-                self._update_reference_map(reference, len(self.blocks) - 1)
-                # Track allocation
-                self.monitor.track_allocation(reference, data_size, reference, importance)
-                return True
-
-            return False
+            # Update metrics
+            self._check_maintenance()
+            return True
 
         except Exception as e:
-            self.logger.error(f"Error during allocation: {e}")
+            self.logger.error(f"Allocation failed: {str(e)}")
             return False
 
     def connect_patterns(self, source_ref: str, target_ref: str) -> bool:
@@ -790,14 +784,11 @@ class MemoryOrganizer:
         }
 
     def _allow_dreaming(self) -> bool:
-        """Check if system is in a state conducive to dreaming."""
-        current_time = time.time()
-        if current_time - self.last_dream_time < self.dream_interval:
-            return False
-
-        # Only dream when system is relatively quiet
-        process = psutil.Process()
-        return process.cpu_percent() < 30.0
+        """Check if system should enter dream state based on adaptive threshold."""
+        system_state = self._calculate_system_state()
+        # Let field observe system state
+        self.sense_pressure("dream_threshold", system_state)
+        return system_state > self.get_threshold("dream_threshold")
 
     def dream_cycle(self) -> None:
         """Allow patterns to evolve through imagination while maintaining harmony."""
@@ -828,8 +819,60 @@ class MemoryOrganizer:
                                 self.connect_patterns(ref, variation_ref)
                                 metrics.record_variation(variation_ref, importance)
 
-            self.last_dream_time = time.time()
             self.logger.debug(f"Dream cycle complete. Generated {len(dreamed_patterns)} variations")
 
         except Exception as e:
             self.logger.error(f"Dream cycle failed: {str(e)}")
+
+    def _calculate_system_state(self) -> float:
+        """Calculate overall system state for threshold adaptation."""
+        try:
+            # Consider multiple factors
+            memory_pressure = psutil.virtual_memory().percent / 100
+            cpu_pressure = psutil.cpu_percent() / 100
+            pattern_activity = len(self.reference_map) / max(
+                1, sum(len(b.references) for b in self.blocks)
+            )
+
+            # Weighted combination
+            state = (
+                (1 - memory_pressure) * 0.4  # Lower memory pressure is better
+                + (1 - cpu_pressure) * 0.3  # Lower CPU pressure is better
+                + pattern_activity * 0.3  # Higher pattern activity is better
+            )
+
+            return state
+
+        except Exception as e:
+            self.logger.error(f"Error calculating system state: {str(e)}")
+            return 0.5  # Default middle state
+
+    def _calculate_fragmentation(self) -> float:
+        """Calculate memory fragmentation level."""
+        try:
+            if not self.blocks:
+                return 0.0
+
+            total_space = sum(block.size for block in self.blocks)
+            used_space = sum(block.used for block in self.blocks)
+            fragmented_space = sum(
+                block.size - block.used for block in self.blocks if 0 < block.used < block.size
+            )
+
+            return fragmented_space / total_space if total_space > 0 else 0.0
+
+        except Exception as e:
+            self.logger.error(f"Error calculating fragmentation: {str(e)}")
+            return 0.0
+
+    def _find_or_create_block(self, required_size: int) -> Optional[int]:
+        """Find a suitable block or create a new one."""
+        # Try to find existing block with space
+        for i, block in enumerate(self.blocks):
+            if block.has_space(required_size):
+                return i
+
+        # Create new block if needed
+        new_block = MemoryBlock(max(required_size, self.initial_block_size))
+        self.blocks.append(new_block)
+        return len(self.blocks) - 1

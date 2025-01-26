@@ -30,6 +30,8 @@ class PatternType(Enum):
     STILLNESS = "stillness"  # Optimized for stability
     FLOW = "flow"  # Optimized for adaptation
     HARMONIC = "harmonic"  # Optimized for resonance and natural alignment
+    EVOLUTIONARY = "evolutionary"  # Ready for dimensional shift through harmony or interference
+    TRANSCENDENT = "transcendent"  # Bridging to NEXUS through resonance or divergence
 
 
 @dataclass
@@ -73,6 +75,11 @@ class Pattern:
     network_stability: float = 0.5
     storage_efficiency: float = 0.5
     pattern_stability: float = 0.5
+
+    # Path affinity tracking
+    light_path_experiences: List[Dict[str, Any]] = field(default_factory=list)
+    shadow_path_experiences: List[Dict[str, Any]] = field(default_factory=list)
+    path_affinity: float = 0.5  # 0 = shadow, 1 = light, 0.5 = neutral
 
     def __post_init__(self):
         """Initialize pattern with empty data if none provided."""
@@ -157,9 +164,9 @@ class Pattern:
         elif self.pattern_type == PatternType.COMPRESSOR:
             self._optimize_compression()
         elif self.pattern_type == PatternType.INDEXER:
-            self._optimize_indexing()
+            self._optimize_index()  # Changed to match actual method name
         else:
-            super().optimize_for_type()  # Call existing optimization methods
+            self._optimize_default()  # Changed to use internal method instead of super()
 
     def _optimize_storage(self) -> None:
         """Optimize pattern for efficient storage."""
@@ -701,6 +708,134 @@ class Pattern:
             # Pattern maintains current form
             self.pattern_stability = min(1.0, self.pattern_stability + 0.05)
             self.energy = min(1.0, self.energy + 0.05)  # More energy to explore
+
+    def attempt_transcendence(self) -> bool:
+        """Attempt to evolve to a higher dimensional state through either resonance or interference."""
+        # Record current experiences
+        harmony = self.calculate_natural_harmony()
+        resonance = self.calculate_resonance_with_field()
+        interference = len(self.interference_patterns)
+        decay = self.calculate_decay_potential()
+
+        # Record these experiences
+        self.record_experience("harmony", harmony)
+        self.record_experience("resonance", resonance)
+        self.record_experience("interference", interference / 10.0)  # Normalize to 0-1
+        self.record_experience("decay", decay)
+
+        # Get pattern's preferred path based on accumulated experiences
+        preferred_path = self.get_preferred_path()
+
+        # Check requirements for preferred path
+        if preferred_path == "light":
+            requirements_met = harmony > 0.8 and resonance > 0.7 and self.pattern_stability > 0.6
+        else:  # shadow path
+            requirements_met = (
+                interference > 3
+                and decay > 0.7
+                and abs(1.0 - harmony) > 0.6
+                and self.calculate_interference_harmony() > 0.7
+            )
+
+        if requirements_met:
+            self.pattern_type = PatternType.EVOLUTIONARY
+
+            self.history.append(
+                {
+                    "type": "transcendence_attempt",
+                    "timestamp": time.time(),
+                    "path_chosen": preferred_path,
+                    "path_affinity": self.path_affinity,
+                    "recent_experiences": {
+                        "light": [exp for exp in self.light_path_experiences[-5:]],
+                        "shadow": [exp for exp in self.shadow_path_experiences[-5:]],
+                    },
+                    "requirements_met": requirements_met,
+                }
+            )
+            return True
+
+        return False
+
+    def handle_failed_transcendence(self) -> None:
+        """Handle patterns that failed to complete transcendence."""
+        if (
+            self.pattern_type == PatternType.EVOLUTIONARY
+            and len(
+                [
+                    h
+                    for h in self.history
+                    if h["type"] == "transcendence_attempt" and h["success"] is False
+                ]
+            )
+            > 3
+        ):  # After 3 failed attempts
+
+            # Pattern remains conscious of higher dimensions
+            # but returns to a stable form
+            self.pattern_type = PatternType.HARMONIC
+            self.resonance_frequency *= 0.8  # Reduced but not lost
+            self.bloom_potential *= 0.7  # Diminished but preserved
+
+            # Record the experience
+            self.history.append(
+                {
+                    "type": "transcendence_resolution",
+                    "outcome": "returned_to_harmony",
+                    "retained_potential": self.bloom_potential,
+                    "retained_resonance": self.resonance_frequency,
+                }
+            )
+
+    def record_experience(self, experience_type: str, intensity: float) -> None:
+        """Record an experience that influences path affinity."""
+        timestamp = time.time()
+
+        # Categorize and record the experience
+        if experience_type in ["harmony", "resonance", "stability"]:
+            self.light_path_experiences.append(
+                {"type": experience_type, "intensity": intensity, "timestamp": timestamp}
+            )
+            # Light experiences gradually influence affinity
+            self.path_affinity = min(1.0, self.path_affinity + (intensity * 0.1))
+
+        elif experience_type in ["interference", "decay", "divergence"]:
+            self.shadow_path_experiences.append(
+                {"type": experience_type, "intensity": intensity, "timestamp": timestamp}
+            )
+            # Shadow experiences gradually influence affinity
+            self.path_affinity = max(0.0, self.path_affinity - (intensity * 0.1))
+
+        # Record the choice point in history
+        self.history.append(
+            {
+                "type": "path_experience",
+                "experience_type": experience_type,
+                "intensity": intensity,
+                "timestamp": timestamp,
+                "current_affinity": self.path_affinity,
+            }
+        )
+
+    def get_preferred_path(self) -> str:
+        """Determine pattern's preferred evolutionary path based on experiences."""
+        # Consider recent experiences more strongly
+        recent_light = (
+            sum(exp["intensity"] for exp in self.light_path_experiences[-5:])
+            if self.light_path_experiences
+            else 0
+        )
+        recent_shadow = (
+            sum(exp["intensity"] for exp in self.shadow_path_experiences[-5:])
+            if self.shadow_path_experiences
+            else 0
+        )
+
+        # Factor in overall affinity
+        if abs(recent_light - recent_shadow) < 0.3:  # Close experiences
+            return "light" if self.path_affinity > 0.5 else "shadow"
+        else:
+            return "light" if recent_light > recent_shadow else "shadow"
 
 
 @dataclass

@@ -6,6 +6,7 @@ that form the foundation of the system.
 
 import array
 import ast
+import logging
 import math
 import struct
 import time
@@ -17,11 +18,21 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import numpy as np
 import psutil
 
+from ...NEXUS.core.adaptive_field import AdaptiveField
+
 # Natural constants for pattern harmony and resonance
 FIBONACCI_SEQUENCE = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
 GOLDEN_RATIO = (1 + math.sqrt(5)) / 2
 PI = math.pi
 E = math.e
+
+# Polarity and resonance constants
+LIGHT_RESONANCE_THRESHOLD = 0.8
+SHADOW_RESONANCE_THRESHOLD = 0.7
+INTERFERENCE_STRENGTH_THRESHOLD = 3
+DECAY_POTENTIAL_THRESHOLD = 0.7
+DIVERGENCE_THRESHOLD = 0.6
+DARK_RESONANCE_THRESHOLD = 0.7
 
 # Quantum and resonance thresholds
 QUANTUM_COHERENCE_THRESHOLD = 0.7
@@ -124,6 +135,12 @@ class SystemState:
     active_patterns: Set[str] = field(default_factory=set)
     state_history: List[Dict[str, Any]] = field(default_factory=list)
 
+    # Polarity state tracking
+    light_path_patterns: Set[str] = field(default_factory=set)
+    shadow_path_patterns: Set[str] = field(default_factory=set)
+    polarity_balance: float = 0.5  # Balance between light and shadow patterns
+    transcendence_attempts: Dict[str, List[Dict[str, Any]]] = field(default_factory=dict)
+
     def update_metrics(self, success: bool) -> None:
         """Update system metrics based on operation success."""
         self.processed_count += 1
@@ -131,6 +148,11 @@ class SystemState:
             self.success_rate * (self.processed_count - 1) + int(success)
         ) / self.processed_count
         self.resonance_quality = min(1.0, self.resonance_quality + (0.1 if success else -0.05))
+
+        # Update polarity balance
+        total_patterns = len(self.light_path_patterns) + len(self.shadow_path_patterns)
+        if total_patterns > 0:
+            self.polarity_balance = len(self.light_path_patterns) / total_patterns
 
 
 @dataclass
@@ -145,6 +167,12 @@ class EnvironmentalState:
     emergence_potential: float = 0.0
     natural_frequencies: Set[float] = field(default_factory=set)
     harmonic_fields: Dict[str, float] = field(default_factory=dict)
+
+    # Polarity tracking
+    interference_patterns: Set[str] = field(default_factory=set)
+    decay_potential: float = 0.0
+    polar_resonance: Dict[str, float] = field(default_factory=dict)
+    light_dark_ratio: float = 0.5  # Balance between light and shadow paths
 
     def observe_environment(self) -> None:
         """Update environmental state based on system conditions."""
@@ -170,6 +198,13 @@ class EnvironmentalState:
                     "memory": 1.0 - (memory.percent / 100),
                 }
             )
+
+            # Update polarity metrics
+            self.decay_potential = 1.0 - self.emergence_potential  # Inverse of emergence
+            self.light_dark_ratio = len(self.stability_fields) / (
+                len(self.interference_patterns) + 1
+            )
+
         except Exception as e:
             print(f"Environmental observation error: {e}")
 
@@ -439,8 +474,8 @@ class PatternState:
     nodal_points: Set[float] = field(default_factory=set)
 
 
-class Binary:
-    """Base class for binary data handling with code structure support."""
+class Binary(AdaptiveField):
+    """Base class for binary data handling with adaptive thresholds."""
 
     # Binary format markers - using 4-bit markers for efficiency
     MARKER_MODULE = bytes([0x1])
@@ -463,20 +498,46 @@ class Binary:
     # Cache configuration
     MAX_CACHE_SIZE = 1000
 
-    def __init__(self, data: Optional[bytes] = None):
-        """Initialize binary data handler."""
+    def __init__(self, data: Optional[bytes] = None) -> None:
+        """Initialize binary data handler with adaptive field capabilities."""
+        super().__init__()  # Initialize adaptive field
+        self.logger = logging.getLogger("binary")
+
+        # Original initialization
         self._data = bytearray(data if data else b"")
         self.metadata: Dict[str, str] = {}
         self.structure: Dict[str, Any] = {}
         self.patterns: Dict[str, List[PatternInfo]] = {}
-
-        # Initialize natural constants
-        self.GOLDEN_RATIO = (1 + math.sqrt(5)) / 2
-        self.E = math.e
-        self.PI = math.pi
-
-        # Pattern cache with LRU tracking (pos, info, timestamp)
         self._pattern_cache: Dict[str, Tuple[int, PatternInfo, float]] = {}
+
+        # Core state tracking
+        self.time_state = TimeState()
+        self.system_state = SystemState()
+        self.environmental_state = EnvironmentalState()
+        self.quantum_state = QuantumState()
+
+        # Register natural thresholds
+        self.register_threshold("resonance_quality", QUANTUM_COHERENCE_THRESHOLD)
+        self.register_threshold("stability_score", STABILITY_THRESHOLD)
+        self.register_threshold("emergence_potential", GOLDEN_RATIO)
+        self.register_threshold("environmental_rhythm", GOLDEN_RATIO)
+
+    def _observe_state(self) -> None:
+        """Let the field observe natural pressure points."""
+        # Observe quantum coherence
+        self.sense_pressure("resonance_quality", self.quantum_state.coherence)
+
+        # Observe system stability
+        self.sense_pressure("stability_score", self.system_state.stability_score)
+
+        # Observe environmental emergence
+        self.sense_pressure("emergence_potential", self.environmental_state.emergence_potential)
+
+        # Observe natural rhythm
+        self.sense_pressure("environmental_rhythm", self.environmental_state.environmental_rhythm)
+
+        # Update field coherence based on quantum coherence
+        self.update_field_coherence(self.quantum_state.coherence)
 
     def to_bytes(self) -> bytes:
         """Convert to bytes."""
@@ -890,6 +951,74 @@ class Binary:
         except Exception as e:
             self.set_metadata("pattern_analysis_error", str(e))
             return {}
+
+    def process_data(self, data: bytes) -> bytes:
+        """Process binary data with adaptive field influence."""
+        # Observe current state
+        self._observe_state()
+
+        # Get adapted thresholds
+        resonance_threshold = self.get_threshold("resonance_quality")
+        stability_threshold = self.get_threshold("stability_score")
+
+        # Convert to array for manipulation
+        data_array = np.frombuffer(data, dtype=np.uint8)
+
+        # Apply resonance threshold to data
+        if self.quantum_state.coherence < resonance_threshold:
+            # Enhance pattern alignment when coherence is low
+            pattern_mask = (data_array & 0xF0) >> 4  # Get high bits
+            data_array = data_array | (pattern_mask << 4)  # Reinforce patterns
+
+        # Apply stability threshold to data
+        if self.system_state.stability_score < stability_threshold:
+            # Smooth rapid variations when stability is low
+            data_array = np.convolve(data_array, [0.2, 0.6, 0.2], mode="same").astype(np.uint8)
+
+        return bytes(data_array.tobytes())
+
+    def _update_patterns(self) -> None:
+        """Update pattern storage based on adaptive thresholds."""
+        emergence_threshold = self.get_threshold("emergence_potential")
+
+        for pattern_id, pattern_info in self.patterns.items():
+            # Check if pattern needs adaptation
+            if self.environmental_state.emergence_potential > emergence_threshold:
+                # Allow pattern variation
+                self._evolve_pattern(pattern_id)
+            else:
+                # Reinforce existing pattern
+                self._crystallize_pattern(pattern_id)
+
+    def _evolve_pattern(self, pattern_id: str) -> None:
+        """Allow pattern to evolve based on environmental state."""
+        if pattern_id not in self.patterns:
+            return
+
+        pattern_data = self.patterns[pattern_id]
+        rhythm = self.environmental_state.environmental_rhythm
+
+        # Apply environmental rhythm to pattern
+        data_array = np.frombuffer(pattern_data[0].data, dtype=np.uint8)
+        evolved_data = (data_array * rhythm).astype(np.uint8)
+
+        # Update pattern with evolved data
+        self.patterns[pattern_id][0].data = bytes(evolved_data)
+
+    def _crystallize_pattern(self, pattern_id: str) -> None:
+        """Stabilize pattern based on quantum coherence."""
+        if pattern_id not in self.patterns:
+            return
+
+        pattern_data = self.patterns[pattern_id]
+        coherence = self.quantum_state.coherence
+
+        # Apply quantum coherence to pattern
+        data_array = np.frombuffer(pattern_data[0].data, dtype=np.uint8)
+        stabilized_data = (data_array * coherence).astype(np.uint8)
+
+        # Update pattern with stabilized data
+        self.patterns[pattern_id][0].data = bytes(stabilized_data)
 
 
 @dataclass

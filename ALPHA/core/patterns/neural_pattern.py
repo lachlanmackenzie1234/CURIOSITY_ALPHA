@@ -1,11 +1,13 @@
 """Neural pattern analysis module."""
 
 import array
+import logging
 from enum import Enum
 from typing import Dict, List, Optional, Set
 
 import numpy as np
 
+from ...NEXUS.core.adaptive_field import AdaptiveField
 from .pattern_evolution import PatternEvolution
 
 
@@ -39,19 +41,31 @@ class ComponentSignature:
         self.evolution_metrics: Dict[str, float] = {}
 
 
-class NeuralPattern:
-    """Neural pattern analysis and learning."""
+class NeuralPattern(AdaptiveField):
+    """Neural pattern analysis and learning with adaptive thresholds."""
 
     def __init__(self, name: str):
         """Initialize neural pattern analyzer."""
+        super().__init__()  # Initialize adaptive field
+        self.logger = logging.getLogger("neural_pattern")
         self.name = name
         self.learned_patterns: List[array.array] = []
         self.pattern_confidence: Dict[str, float] = {}
         self.evolution_system = PatternEvolution()
         self.pattern_history: Dict[str, List[ComponentSignature]] = {}
 
+        # Register adaptive thresholds
+        self.register_threshold(
+            "similarity_threshold", 0.5
+        )  # Minimum similarity for pattern matching
+        self.register_threshold("confidence_threshold", 0.7)  # Minimum confidence for learning
+        self.register_threshold("complexity_threshold", 0.7)  # Maximum allowed complexity
+        self.register_threshold(
+            "adaptation_threshold", 0.7
+        )  # Minimum adaptation rate for enhancement
+
     def analyze_component(self, content: bytes) -> ComponentSignature:
-        """Analyze binary content and generate component signature."""
+        """Analyze binary content with adaptive thresholds."""
         signature = ComponentSignature()
 
         try:
@@ -62,9 +76,9 @@ class NeuralPattern:
             evolution_context = {
                 "pattern_id": self.name,
                 "expected_behavior": {
-                    "regularity": 0.7,
+                    "regularity": self.get_threshold("similarity_threshold"),
                     "symmetry": 0.5,
-                    "complexity": 0.6,
+                    "complexity": self.get_threshold("complexity_threshold"),
                 },
             }
 
@@ -72,6 +86,10 @@ class NeuralPattern:
             evolution_metrics = self.evolution_system._calculate_pattern_metrics(
                 pattern_data, evolution_context
             )
+
+            # Let field observe evolution metrics
+            self.sense_pressure("similarity_threshold", evolution_metrics.get("regularity", 0.0))
+            self.sense_pressure("complexity_threshold", evolution_metrics.get("complexity", 0.0))
 
             # Update signature with evolution metrics
             signature.evolution_metrics = evolution_metrics
@@ -85,20 +103,25 @@ class NeuralPattern:
             confidence = evolution_metrics["success_rate"]
             self.pattern_confidence[self.name] = confidence
 
+            # Let field observe confidence
+            self.sense_pressure("confidence_threshold", confidence)
+
             return signature
 
         except Exception as e:
-            print(f"Error in pattern analysis: {str(e)}")
+            self.logger.error(f"Error in pattern analysis: {str(e)}")
             return signature
 
     def learn_component_behavior(self, pattern_data: bytes) -> None:
-        """Learn from component behavior with evolution metrics."""
+        """Learn from component behavior with adaptive thresholds."""
         try:
             # Convert to array for learning
             pattern_array = array.array("B", pattern_data)
 
-            # Add to learned patterns
-            self.learned_patterns.append(pattern_array)
+            # Add to learned patterns if confidence is sufficient
+            confidence = self.pattern_confidence.get(self.name, 0.0)
+            if confidence >= self.get_threshold("confidence_threshold"):
+                self.learned_patterns.append(pattern_array)
 
             # Calculate adaptation rate
             if self.name in self.pattern_history:
@@ -106,12 +129,14 @@ class NeuralPattern:
                 if history:
                     latest = history[-1]
                     adaptation = latest.evolution_metrics.get("adaptation_rate", 0.0)
-                    # Use adaptation rate to adjust learning
-                    if adaptation > 0.7:  # High adaptation threshold
+                    # Let field observe adaptation rate
+                    self.sense_pressure("adaptation_threshold", adaptation)
+                    # Use adaptive threshold for enhancement
+                    if adaptation > self.get_threshold("adaptation_threshold"):
                         self._enhance_pattern(pattern_array)
 
         except Exception as e:
-            print(f"Error in pattern learning: {str(e)}")
+            self.logger.error(f"Error in pattern learning: {str(e)}")
 
     def _enhance_pattern(self, pattern: array.array) -> None:
         """Enhance pattern based on learned behaviors."""
@@ -130,20 +155,21 @@ class NeuralPattern:
             print(f"Error in pattern enhancement: {str(e)}")
 
     def suggest_improvements(self, content: bytes) -> List[Dict]:
-        """Suggest improvements based on learned patterns."""
+        """Suggest improvements based on learned patterns and adaptive thresholds."""
         suggestions = []
         try:
             data = np.frombuffer(content, dtype=np.uint8)
 
-            # Compare with learned patterns
+            # Compare with learned patterns using adaptive threshold
+            similarity_threshold = self.get_threshold("similarity_threshold")
             for i, pattern in enumerate(self.learned_patterns):
                 similarity = self._calculate_similarity(data, pattern)
                 pattern_id = f"pattern_{i}"
                 base_confidence = self.pattern_confidence.get(pattern_id, 0.5)
                 confidence = similarity * base_confidence
 
-                # Lower threshold for similar code patterns
-                if similarity > 0.5:  # Detect moderately similar patterns
+                # Use adaptive threshold for similarity detection
+                if similarity > similarity_threshold:
                     suggestions.append(
                         {
                             "confidence": confidence,
@@ -156,9 +182,10 @@ class NeuralPattern:
                         }
                     )
 
-            # Add general suggestions based on pattern analysis
+            # Add general suggestions based on adaptive complexity threshold
             signature = self.analyze_component(content)
-            if signature.performance_metrics["complexity"] > 0.7:
+            complexity_threshold = self.get_threshold("complexity_threshold")
+            if signature.performance_metrics["complexity"] > complexity_threshold:
                 suggestions.append(
                     {
                         "confidence": 0.8,
@@ -171,7 +198,7 @@ class NeuralPattern:
                 )
 
         except Exception as e:
-            print(f"Error suggesting improvements: {str(e)}")
+            self.logger.error(f"Error suggesting improvements: {str(e)}")
 
         return suggestions
 

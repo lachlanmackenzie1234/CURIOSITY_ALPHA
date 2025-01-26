@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Set
 
 import numpy as np
 
+from ALPHA.core.field_observer import FieldObserver
 from ALPHA.core.patterns.binary_pattern import BinaryPattern
 from ALPHA.core.patterns.pattern import Pattern
 
@@ -117,45 +118,69 @@ class ResonanceBuffer:
             self.logger.error(f"Frequency initialization error: {str(e)}")
 
 
-class NEXUSProtection:
+class NEXUSProtection(AdaptiveField):
     """Master protection system coordinating all defense layers."""
 
     def __init__(self):
+        super().__init__()  # Initialize adaptive field
         self.logger = logging.getLogger("nexus.protection")
         self.inner_shield = InnerShield()
         self.resonance_buffer = ResonanceBuffer()
         self.birth_pattern: Optional[BinaryPattern] = None
+        self.field_observer = None  # Will be set by NEXUS
 
-    def initialize_from_birth(self, birth_pattern: BinaryPattern) -> None:
-        """Initialize protection system during NEXUS birth."""
-        try:
-            self.birth_pattern = birth_pattern
-            self.logger.info("Initializing NEXUS protection system")
-
-            # Initialize resonance buffer
-            self.resonance_buffer.establish_field(birth_pattern)
-
-            # Record birth pattern for reference
-            self.inner_shield._pattern_history.append(birth_pattern)
-
-            self.logger.info("Protection system initialized successfully")
-
-        except Exception as e:
-            self.logger.error(f"Failed to initialize protection: {str(e)}")
+    def set_field_observer(self, observer: FieldObserver) -> None:
+        """Connect to the field observer."""
+        self.field_observer = observer
 
     def protect_pattern(self, pattern: BinaryPattern) -> bool:
         """Process pattern through all protection layers."""
         try:
             # First layer: Inner shield validation
-            if not self.inner_shield.validate_pattern(pattern):
+            stability = self.inner_shield.validate_pattern(pattern)
+
+            # Let field observe this value
+            if self.field_observer:
+                self.field_observer.observe_value("protection", "stability", stability)
+                # Use adapted threshold if available, otherwise default
+                stability_threshold = (
+                    self.field_observer.get_threshold("protection:stability") or 0.5
+                )
+            else:
+                stability_threshold = 0.5
+
+            if stability < stability_threshold:
                 return False
 
             # Second layer: Resonance check
             if self.resonance_buffer.resonance_field is not None:
                 resonance = self._check_resonance(pattern)
-                if resonance < 0.6:  # Minimum resonance threshold
+
+                if self.field_observer:
+                    self.field_observer.observe_value("protection", "resonance", resonance)
+                    resonance_threshold = (
+                        self.field_observer.get_threshold("protection:resonance") or 0.6
+                    )
+                else:
+                    resonance_threshold = 0.6
+
+                if resonance < resonance_threshold:
                     self.logger.warning("Pattern failed resonance check")
                     return False
+
+            # Third layer: Coherence check
+            coherence = self._check_pattern_coherence(pattern)
+
+            if self.field_observer:
+                self.field_observer.observe_value("protection", "coherence", coherence)
+                coherence_threshold = (
+                    self.field_observer.get_threshold("protection:coherence") or 0.4
+                )
+            else:
+                coherence_threshold = 0.4
+
+            if coherence < coherence_threshold:
+                return False
 
             return True
 
@@ -179,4 +204,36 @@ class NEXUSProtection:
 
         except Exception as e:
             self.logger.error(f"Resonance check error: {str(e)}")
+            return 0.0
+
+    def _check_pattern_coherence(self, pattern: BinaryPattern) -> float:
+        """Check pattern coherence with system state."""
+        try:
+            if not self.birth_pattern:
+                return 0.0
+
+            # Compare with birth pattern characteristics
+            birth_entropy = self._calculate_pattern_entropy(self.birth_pattern)
+            pattern_entropy = self._calculate_pattern_entropy(pattern)
+
+            # Coherence emerges from entropy relationship
+            coherence = 1.0 - abs(birth_entropy - pattern_entropy) / max(
+                birth_entropy, pattern_entropy
+            )
+            return coherence
+
+        except Exception as e:
+            self.logger.error(f"Coherence check error: {str(e)}")
+            return 0.0
+
+    def _calculate_pattern_entropy(self, pattern: BinaryPattern) -> float:
+        """Calculate pattern entropy as a measure of complexity."""
+        try:
+            data = np.array(pattern.data)
+            hist, _ = np.histogram(data, bins=2, density=True)
+            entropy = -np.sum(hist * np.log2(hist + 1e-10))
+            return entropy
+
+        except Exception as e:
+            self.logger.error(f"Entropy calculation error: {str(e)}")
             return 0.0

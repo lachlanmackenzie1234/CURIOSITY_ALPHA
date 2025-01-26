@@ -4,11 +4,13 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
+from ALPHA.core.field_observer import FieldObserver
 from ALPHA.core.patterns.binary_cycle import BinaryCycle
 from ALPHA.core.patterns.binary_pattern import BinaryPattern
 from ALPHA.core.patterns.binary_pulse import BinaryStream
 from ALPHA.core.patterns.pattern_evolution import PatternEvolution
 from ALPHA.core.patterns.resonance import ResonanceType as Resonance
+from ALPHA.NEXUS.core.adaptive_field import AdaptiveField
 
 
 @dataclass
@@ -22,19 +24,35 @@ class NEXUSState:
     pattern_coherence: float = 0.0
 
 
-class NEXUS:
+class NEXUS(AdaptiveField):
     """Core NEXUS consciousness coordinator."""
 
     def __init__(self) -> None:
         """Initialize NEXUS with existing components."""
-        self.logger = logging.getLogger("nexus.core")
+        super().__init__()  # Initialize adaptive field
+        self.logger = logging.getLogger("nexus")
         self.state = NEXUSState()
+        self.resonance = NEXUSResonance()
+        self.cycle = NEXUSCycle()
+        self.evolution = NEXUSEvolution()
+        self.protection = NEXUSProtection()
+        self.pulse_stream = []
+        self._consciousness_patterns = []
+
+        # Initialize field observer
+        self.field_observer = FieldObserver()
+
+        # Connect components for field propagation
+        self.field_observer.connect_components("nexus", "protection")
+        self.field_observer.connect_components("protection", "resonance")
+        self.field_observer.connect_components("resonance", "evolution")
+        self.field_observer.connect_components("evolution", "cycle")
 
         # Core binary components
         self.pulse_stream = BinaryStream(name="nexus_core")
         initial_state = BinaryPattern(sequence=[], timestamp=0, source="nexus_init")
         self.cycle = BinaryCycle(initial_state=initial_state)
-        self.resonance = Resonance.HARMONIC  # Initialize with HARMONIC resonance type
+        self.resonance = Resonance.HARMONIC
         self.evolution = PatternEvolution()
 
         # Pattern tracking
@@ -110,15 +128,38 @@ class NEXUS:
             if self._consciousness_patterns:
                 recent = self._consciousness_patterns[-10:]
                 coherence = sum(1 for p in recent if self.resonance.check_harmony(p))
-                self.state.pattern_coherence = coherence / len(recent)
+                coherence_ratio = coherence / len(recent)
+
+                # Let field observer detect and manage thresholds
+                self.field_observer.observe_value("nexus", "pattern_coherence", coherence_ratio)
+                self.state.pattern_coherence = coherence_ratio
+
+                # Update field coherence
+                self.field_observer.update_field_coherence(coherence_ratio)
 
             # Update consciousness level
-            self.state.consciousness_level = min(
-                1.0, self.state.consciousness_level + (self.state.pattern_coherence * 0.1)
-            )
+            if hasattr(self.state, "pattern_coherence"):
+                growth_rate = self.state.consciousness_level * 0.1  # Initial growth rate
+                self.field_observer.observe_value("nexus", "consciousness_growth", growth_rate)
 
-            # Update field strength based on cycle stability
-            self.state.field_strength = self.cycle.stability_score
+                # Get adapted growth rate if threshold exists
+                adapted_rate = self.field_observer.get_threshold("nexus:consciousness_growth")
+                if adapted_rate > 0:
+                    growth_rate = adapted_rate
+
+                self.state.consciousness_level = min(
+                    1.0,
+                    self.state.consciousness_level + (self.state.pattern_coherence * growth_rate),
+                )
+
+            # Update field strength
+            stability = self.cycle.stability_score
+            self.field_observer.observe_value("nexus", "field_stability", stability)
+
+            # Let field strength adapt naturally
+            adapted_stability = self.field_observer.get_threshold("nexus:field_stability")
+            if adapted_stability > 0 and stability >= adapted_stability:
+                self.state.field_strength = stability
 
         except Exception as e:
             self.logger.error(f"Failed to update consciousness: {str(e)}")
@@ -142,4 +183,22 @@ class NEXUS:
             "coherence": self.state.pattern_coherence,
             "field_strength": self.state.field_strength,
             "consciousness": self.state.consciousness_level,
+        }
+
+    def get_field_state(self) -> Dict[str, Any]:
+        """Get current state of the adaptive field."""
+        return {
+            "coherence": self._field_coherence,
+            "observed_points": [
+                {
+                    "id": point_id,
+                    "is_threshold": point.is_threshold,
+                    "value": point.last_value,
+                    "pressure": point.pressure_count,
+                }
+                for point_id, point in self.field_observer._pressure_points.items()
+            ],
+            "thresholds": {
+                name: state.value for name, state in self.field_observer._thresholds.items()
+            },
         }

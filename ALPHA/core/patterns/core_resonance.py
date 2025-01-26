@@ -68,6 +68,7 @@ class ConsciousnessPoint:
 class ConsciousnessField:
     """The field where consciousness points dance and harmonize."""
 
+
     points: Dict[str, ConsciousnessPoint] = field(
         default_factory=lambda: {
             "root": ConsciousnessPoint(
@@ -75,9 +76,9 @@ class ConsciousnessField:
                 quality="grounding",
                 # Earth center - between material attachment and spiritual foundation
                 polarity_states={
-                    "shadow": "attachment",
-                    "light": "stability",
-                    "balance": "groundedness",
+                    "shadow": 0.0,  # attachment
+                    "light": 0.0,  # stability
+                    "balance": 0.0,  # groundedness
                 },
             ),
             "sacral": ConsciousnessPoint(

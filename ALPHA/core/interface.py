@@ -5,9 +5,12 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, cast
 
+from ALPHA.NEXUS.core.field_observer import FieldObserver
+
 from .binary_foundation.base import Binary
 from .execution.engine import ExecutionEngine
 from .memory.space import MemoryOrganizer
+from ..NEXUS.core.adaptive_field import AdaptiveField
 from .patterns.neural_pattern import NeuralPattern
 from .translation.translator import BinaryTranslator
 
@@ -17,11 +20,12 @@ def create_alpha(name: str = "alpha") -> "ALPHACore":
     return ALPHACore(name)
 
 
-class ALPHACore:
+class ALPHACore(AdaptiveField):
     """Core ALPHA system interface."""
 
     def __init__(self, name: str):
         """Initialize ALPHA core."""
+        super().__init__()  # Initialize adaptive field
         self.name = name
         self.memory = MemoryOrganizer()
         self.engine = ExecutionEngine()
@@ -29,6 +33,16 @@ class ALPHACore:
         self.translator = BinaryTranslator()
         self._executor = ThreadPoolExecutor(max_workers=4)
         self._io_queue: asyncio.Queue = asyncio.Queue()
+
+        # Initialize field observer for system-wide adaptation
+        self.field_observer = FieldObserver()
+
+        # Connect components for field propagation
+        self.field_observer.connect_components("memory", "neural_pattern")
+        self.field_observer.connect_components("neural_pattern", "engine")
+        self.field_observer.connect_components("engine", "translator")
+        self.field_observer.connect_components("translator", "memory")
+
         self.state: Dict[str, Any] = {
             "processed_count": 0,
             "success_rate": 0.0,
@@ -37,6 +51,7 @@ class ALPHACore:
             "translation_success": 0,
             "io_pending": 0,
             "last_interaction": None,
+            "field_coherence": 0.5,  # Initial field coherence
         }
 
     async def start(self) -> None:
@@ -115,23 +130,52 @@ class ALPHACore:
             # Prepare input
             binary_data = self._prepare_input(input_data)
 
+            # Let field observe translation preparation
+            self.field_observer.observe_value(
+                "translator", "input_complexity", len(binary_data.to_bytes())
+            )
+
             # Perform translation
             self.translator.set_binary(binary_data)
             translated = self.translator.translate_from_binary()
             if translated is not None:
                 self.state["translations_performed"] += 1
                 self.state["translation_success"] += 1
+                # Observe translation success
+                self.field_observer.observe_value(
+                    "translator",
+                    "success_rate",
+                    self.state["translation_success"] / self.state["translations_performed"],
+                )
 
             # Analyze with neural pattern
-            self.neural_pattern.analyze_component(binary_data.to_bytes())
+            confidence = self.neural_pattern.analyze_component(binary_data.to_bytes())
+            # Observe pattern confidence
+            self.field_observer.observe_value("neural_pattern", "confidence", confidence)
 
             # Store in memory with monitoring
             reference = f"{self.name}_data_{self.state['processed_count']}"
-            if not self.memory.allocate(binary_data.to_bytes(), reference):
+            memory_success = self.memory.allocate(binary_data.to_bytes(), reference)
+            if not memory_success:
                 raise RuntimeError("Failed to allocate memory")
+            # Observe memory usage
+            self.field_observer.observe_value("memory", "usage", self.memory.get_usage_percentage())
 
             # Execute and get results
             exec_result = self.engine.execute(binary_data.to_bytes())
+            # Observe execution success
+            self.field_observer.observe_value("engine", "success_rate", float(exec_result.success))
+
+            # Update field coherence based on component states
+            field_coherence = (
+                confidence * 0.3  # Neural pattern confidence
+                + float(exec_result.success) * 0.3  # Execution success
+                + (self.state["translation_success"] / max(1, self.state["translations_performed"]))
+                * 0.2  # Translation rate
+                + (1 - min(1, self.memory.get_usage_percentage())) * 0.2  # Memory availability
+            )
+            self.state["field_coherence"] = field_coherence
+            self.field_observer.observe_value("alpha", "field_coherence", field_coherence)
 
             # Update state and convert result
             result_dict = {
@@ -140,6 +184,7 @@ class ALPHACore:
                 "metrics": exec_result.metrics,
                 "translation": translated,
                 "memory_usage": self.memory.get_usage_stats(),
+                "field_coherence": field_coherence,
             }
             self._update_state(result_dict)
 

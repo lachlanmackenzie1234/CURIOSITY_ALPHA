@@ -23,6 +23,7 @@ class TranslationUnit:
     mappings: Dict[str, BinaryMapping]
     resonance_score: float = 0.0
     preservation_score: float = 0.0
+    frame_rate: float = 24.0  # Natural rhythm frame rate
     metadata: Dict[str, float] = field(default_factory=dict)
 
 
@@ -40,10 +41,23 @@ class PatternFirstTranslator:
         self.min_resonance_score = 0.6
         self.preservation_threshold = 0.8
 
-        # Window settings
-        self.pattern_window = 64
-        self.overlap_size = 32
-        self.context_size = 16
+        # Natural rhythm window settings
+        self.pattern_window = 24  # Film's natural threshold
+        self.overlap_size = 12  # Completion number from sequence
+        self.context_size = 8  # Power progression completion
+
+        # Frame rate settings for different pattern types
+        self.base_frame_rate = 24.0  # Standard natural threshold
+        self.slow_frame_rate = 12.0  # For complex patterns
+        self.fast_frame_rate = 48.0  # For rapid oscillations
+
+    def _calculate_frame_rate(self, pattern: NaturalPattern) -> float:
+        """Calculate optimal frame rate based on pattern complexity."""
+        if pattern.complexity > 0.8:
+            return self.slow_frame_rate
+        elif pattern.frequency > self.base_frame_rate:
+            return self.fast_frame_rate
+        return self.base_frame_rate
 
     def translate_to_binary(self, content: str, preserve_patterns: bool = True) -> bytes:
         """Translate content to binary with pattern preservation."""
@@ -110,18 +124,25 @@ class PatternFirstTranslator:
                     pattern_id = f"pattern_{len(patterns)}"
                     patterns[pattern_id] = pattern
 
-                # Calculate resonance
+                    # Calculate optimal frame rate for this pattern
+                    frame_rate = self._calculate_frame_rate(pattern)
+
+                # Calculate resonance with frame rate awareness
                 resonance_score = 0.0
                 if patterns:
                     profiles = self.resonance.analyze_pattern_interactions(patterns, context)
                     resonance_score = max(p.harmony for p in profiles.values())
+                    # Adjust resonance based on frame rate alignment
+                    if abs(frame_rate - self.base_frame_rate) < 1.0:
+                        resonance_score *= 1.2  # Boost resonance for natural rhythms
 
-                # Create translation unit
+                # Create translation unit with frame rate
                 unit = TranslationUnit(
                     content=window.tobytes(),
                     patterns=patterns,
                     mappings={},
                     resonance_score=resonance_score,
+                    frame_rate=frame_rate,
                 )
                 units.append(unit)
 

@@ -8,14 +8,16 @@ from typing import Dict, List, Optional
 import numpy as np
 
 from ..binary_foundation.base import Binary
+from ...NEXUS.core.adaptive_field import AdaptiveField
 from ..patterns.pattern import Pattern
 
 
-class BinaryTranslator:
-    """Manages code translation between Python and binary formats."""
+class BinaryTranslator(AdaptiveField):
+    """Manages code translation between Python and binary formats with adaptive thresholds."""
 
     def __init__(self):
         """Initialize the translator."""
+        super().__init__()  # Initialize adaptive field
         self.logger = logging.getLogger(__name__)
         self.binary: Optional[Binary] = None
         self.mappings: Dict[str, bytes] = {}
@@ -26,15 +28,16 @@ class BinaryTranslator:
             "error_rate": 0.0,
         }
 
+        # Register adaptive thresholds
+        self.register_threshold(
+            "pattern_preservation_threshold", 0.6
+        )  # Minimum pattern preservation
+        self.register_threshold("confidence_threshold", 0.7)  # Minimum translation confidence
+        self.register_threshold("similarity_threshold", 0.8)  # Pattern similarity threshold
+        self.register_threshold("error_tolerance", 0.2)  # Maximum acceptable error rate
+
     def translate_to_binary(self, code: str) -> Binary:
-        """Translate Python code to binary format.
-
-        Args:
-            code: Python source code to translate.
-
-        Returns:
-            Binary object containing translated code.
-        """
+        """Translate Python code to binary format with adaptive thresholds."""
         try:
             # Create new binary object
             binary = Binary()
@@ -49,9 +52,15 @@ class BinaryTranslator:
             binary.encode_python(code)
 
             # Preserve detected patterns
+            preserved_count = 0
             for pattern in patterns:
                 pattern_bytes = pattern.data.tobytes()
                 binary.set_segment(len(binary.to_bytes()), pattern_bytes)
+                preserved_count += 1
+
+            # Let field observe pattern preservation
+            preservation_rate = preserved_count / max(len(patterns), 1)
+            self.sense_pressure("pattern_preservation_threshold", preservation_rate)
 
             # Update metrics
             self._update_metrics(binary, patterns)
@@ -62,22 +71,20 @@ class BinaryTranslator:
 
         except SyntaxError as e:
             self.logger.error(f"Syntax error in code: {str(e)}")
+            self.sense_pressure("error_tolerance", 1.0)  # Maximum error
             binary = Binary()
             binary.metadata["syntax_error"] = str(e)
             return binary
 
         except Exception as e:
             self.logger.error(f"Translation error: {str(e)}")
+            self.sense_pressure("error_tolerance", 1.0)  # Maximum error
             binary = Binary()
             binary.metadata["error"] = str(e)
             return binary
 
     def translate_from_binary(self) -> Optional[str]:
-        """Translate binary back to Python code.
-
-        Returns:
-            Generated Python code or None if translation fails.
-        """
+        """Translate binary back to Python code using adaptive thresholds."""
         if not self.binary:
             self.logger.error("No binary data set")
             return None
@@ -89,20 +96,28 @@ class BinaryTranslator:
             # Generate initial code
             code = self._generate_code(patterns)
             if not code:
+                self.sense_pressure("error_tolerance", 1.0)  # Maximum error
                 return None
 
             # Validate generated code
             if not self._validate_code(code):
                 self.logger.error("Generated invalid code")
+                self.sense_pressure("error_tolerance", 1.0)  # Maximum error
                 return None
 
-            # Update metrics
+            # Update metrics with adaptive thresholds
             self._update_translation_metrics(code, patterns)
+
+            # Check confidence against threshold
+            if self.metrics["translation_confidence"] < self.get_threshold("confidence_threshold"):
+                self.logger.warning("Translation confidence below threshold")
+                return None
 
             return code
 
         except Exception as e:
             self.logger.error(f"Translation error: {str(e)}")
+            self.sense_pressure("error_tolerance", 1.0)  # Maximum error
             return None
 
     def _extract_binary_patterns(self) -> List[Pattern]:
@@ -180,7 +195,7 @@ class BinaryTranslator:
             return False
 
     def _update_metrics(self, binary: Binary, patterns: List[Pattern]) -> None:
-        """Update translation metrics."""
+        """Update translation metrics with adaptive thresholds."""
         try:
             # Calculate pattern preservation
             preserved = 0
@@ -193,12 +208,18 @@ class BinaryTranslator:
 
             preservation = preserved / max(len(patterns), 1)
 
-            # Calculate translation confidence
+            # Let field observe preservation
+            self.sense_pressure("pattern_preservation_threshold", preservation)
+
+            # Calculate translation confidence with adaptive error tolerance
+            error_tolerance = self.get_threshold("error_tolerance")
             confidence = (
-                preservation * 0.6
-                + (1 - self.metrics["error_rate"])  # Pattern preservation weight
-                * 0.4  # Error rate weight
+                preservation * 0.6  # Pattern preservation weight
+                + (1 - min(self.metrics["error_rate"], error_tolerance)) * 0.4  # Error rate weight
             )
+
+            # Let field observe confidence
+            self.sense_pressure("confidence_threshold", confidence)
 
             self.metrics.update(
                 {
@@ -210,15 +231,16 @@ class BinaryTranslator:
             # Update binary metadata
             binary.metadata.update(
                 {
-                    "translation_translation_confidence": str(confidence),
-                    "translation_pattern_preservation_score": str(preservation),
-                    "translation_patterns_preserved": str(preserved),
-                    "translation_total_patterns": str(len(patterns)),
+                    "translation_confidence": str(confidence),
+                    "pattern_preservation_score": str(preservation),
+                    "patterns_preserved": str(preserved),
+                    "total_patterns": str(len(patterns)),
                 }
             )
 
         except Exception as e:
             self.logger.error(f"Metrics update error: {str(e)}")
+            self.sense_pressure("error_tolerance", 1.0)  # Maximum error
 
     def _update_translation_metrics(self, code: str, patterns: List[Pattern]) -> None:
         """Update metrics after translation."""
@@ -252,21 +274,41 @@ class BinaryTranslator:
         self._update_pattern_cache(pattern, meaning)
 
     def discover_structure(self, pattern1: bytes, pattern2: bytes) -> float:
-        """Find structural relationship between patterns."""
+        """Discover structural similarity between patterns using adaptive threshold."""
         try:
-            # Convert to numpy arrays for analysis
+            # Calculate basic similarity
+            similarity = self._calculate_similarity(pattern1, pattern2)
+
+            # Let field observe similarity
+            self.sense_pressure("similarity_threshold", similarity)
+
+            # Use adaptive threshold
+            return similarity if similarity >= self.get_threshold("similarity_threshold") else 0.0
+
+        except Exception as e:
+            self.logger.error(f"Structure discovery error: {str(e)}")
+            return 0.0
+
+    def _calculate_similarity(self, pattern1: bytes, pattern2: bytes) -> float:
+        """Calculate similarity between patterns."""
+        try:
+            # Convert to numpy arrays for efficient comparison
             arr1 = np.frombuffer(pattern1, dtype=np.uint8)
             arr2 = np.frombuffer(pattern2, dtype=np.uint8)
 
-            # Calculate structural similarity
-            if len(arr1) != len(arr2):
+            # Handle different lengths
+            min_len = min(len(arr1), len(arr2))
+            if min_len == 0:
                 return 0.0
 
-            similarity = 1 - np.abs(arr1 - arr2).mean() / 255
-            return float(similarity)
+            # Calculate similarity using normalized hamming distance
+            matches = np.sum(arr1[:min_len] == arr2[:min_len])
+            similarity = matches / min_len
+
+            return similarity
 
         except Exception as e:
-            self.logger.error(f"Structure analysis error: {str(e)}")
+            self.logger.error(f"Similarity calculation error: {str(e)}")
             return 0.0
 
     def _update_pattern_cache(self, pattern: bytes, meaning: str) -> None:

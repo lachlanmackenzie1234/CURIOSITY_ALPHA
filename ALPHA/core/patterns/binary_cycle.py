@@ -5,13 +5,13 @@ maintaining the natural rhythm of existence through developmental stages.
 """
 
 import asyncio
+import math
 import sys
 import threading
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Awaitable, Dict, List, Optional, Set, TypeVar, cast, Tuple
-import math
+from typing import Any, Awaitable, Dict, List, Optional, Set, Tuple, TypeVar, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -21,6 +21,7 @@ from ALPHA.core.binary_foundation.base import StateChange
 from ALPHA.core.memory.space import MemoryBlock, MemoryMetrics
 from ALPHA.core.patterns.binary_pattern import BinaryPattern
 from ALPHA.core.patterns.binary_pulse import Pulse
+
 from .nexus_field import NexusField, PatternField, Position
 
 # Type definitions
@@ -279,7 +280,7 @@ class NexusField:
         self.coherence: float = 0.0
 
         # Natural constants
-        self.phi = (1 + 5 ** 0.5) / 2  # Golden ratio for harmonics
+        self.phi = (1 + 5**0.5) / 2  # Golden ratio for harmonics
         self.damping = 0.1  # Natural damping of waves
         self.memory_decay = 0.05  # Natural memory decay rate
         self.tunnel_threshold = 0.3  # Threshold for quantum tunneling
@@ -296,7 +297,7 @@ class NexusField:
                 origin=source,
                 amplitude=strength * np.exp(-0.2 * abs(i - 1)),  # Amplitude envelope
                 frequency=freq,
-                phase=0.0
+                phase=0.0,
             )
             self.resonance_waves[wave.id] = wave
 
@@ -341,9 +342,7 @@ class NexusField:
         else:
             # New memory point
             self.field_memory[position] = MemoryPoint(
-                strength=resonance,
-                last_update=current_time,
-                crystallized=resonance > 0.8
+                strength=resonance, last_update=current_time, crystallized=resonance > 0.8
             )
 
     def _calculate_memory_gradient(self, position: Position) -> float:
@@ -353,7 +352,8 @@ class NexusField:
 
         # Find nearby memory points
         nearby_points = [
-            (p, m) for p, m in self.field_memory.items()
+            (p, m)
+            for p, m in self.field_memory.items()
             if position.distance_to(p) < 3.0  # Local influence only
         ]
 
@@ -385,7 +385,7 @@ class NexusField:
         uncertainty_radius = pattern.energy * 2.0
 
         # Generate probable positions in uncertainty field
-        angles = np.linspace(0, 2*np.pi, 8)  # 8 possible positions
+        angles = np.linspace(0, 2 * np.pi, 8)  # 8 possible positions
         positions = []
         probabilities = []
 
@@ -402,10 +402,7 @@ class NexusField:
 
             # Combined probability
             probability = (
-                memory_influence * 0.4 +
-                wave_influence * 0.3 +
-                tunnel_factor * 0.3 +
-                gradient * 0.2
+                memory_influence * 0.4 + wave_influence * 0.3 + tunnel_factor * 0.3 + gradient * 0.2
             ) / 1.2  # Normalized
 
             positions.append(pos)
@@ -414,7 +411,7 @@ class NexusField:
         # Normalize probabilities
         total_prob = sum(probabilities)
         if total_prob > 0:
-            probabilities = [p/total_prob for p in probabilities]
+            probabilities = [p / total_prob for p in probabilities]
             # Choose position based on probability
             return positions[np.random.choice(len(positions), p=probabilities)]
 
@@ -433,19 +430,14 @@ class NexusField:
 
         # Energy barrier height
         barrier_points = self._sample_points_between(pattern.position, target)
-        barrier_height = max(
-            (1.0 - self._calculate_memory_gradient(p))
-            for p in barrier_points
-        )
+        barrier_height = max((1.0 - self._calculate_memory_gradient(p)) for p in barrier_points)
 
         # Tunneling probability decreases with:
         # - Higher barriers
         # - Longer distances
         # - Lower pattern energy
 
-        tunnel_prob = np.exp(
-            -distance * barrier_height / (pattern.energy + 0.1)
-        )
+        tunnel_prob = np.exp(-distance * barrier_height / (pattern.energy + 0.1))
 
         return float(tunnel_prob) if tunnel_prob > self.tunnel_threshold else 0.0
 
@@ -455,14 +447,16 @@ class NexusField:
         steps = 5  # Balance between accuracy and performance
 
         for i in range(steps):
-            t = (i + 1)/(steps + 1)  # Exclude start/end points
-            x = start.x + t*(end.x - start.x)
-            y = start.y + t*(end.y - start.y)
+            t = (i + 1) / (steps + 1)  # Exclude start/end points
+            x = start.x + t * (end.x - start.x)
+            y = start.y + t * (end.y - start.y)
             points.append(Position(x, y))
 
         return points
 
-    def _try_pattern_transformation(self, p1: PatternField, p2: PatternField) -> Optional[PatternField]:
+    def _try_pattern_transformation(
+        self, p1: PatternField, p2: PatternField
+    ) -> Optional[PatternField]:
         """Attempt pattern transformation at interference points."""
         # Transformation more likely with:
         # 1. High combined energy
@@ -480,9 +474,9 @@ class NexusField:
 
         # Calculate transformation probability
         transform_prob = (
-            (p1.energy * p2.energy) ** 0.5 * 0.4 +  # Energy factor
-            interference * 0.4 +  # Interference strength
-            (p1.resonance * p2.resonance) ** 0.5 * 0.2  # Resonance harmony
+            (p1.energy * p2.energy) ** 0.5 * 0.4  # Energy factor
+            + interference * 0.4  # Interference strength
+            + (p1.resonance * p2.resonance) ** 0.5 * 0.2  # Resonance harmony
         )
 
         if transform_prob < 0.7:  # Threshold for transformation
@@ -492,17 +486,16 @@ class NexusField:
         return PatternField(
             energy=(p1.energy + p2.energy) * 0.6,  # Some energy lost in transformation
             resonance=max(p1.resonance, p2.resonance) * 0.8,
-            position=interference_point
+            position=interference_point,
         )
 
     def _update_entangled_patterns(self, patterns: List[PatternField]) -> None:
         """Update entangled patterns based on quantum-like correlations."""
         for i, p1 in enumerate(patterns):
-            for p2 in patterns[i+1:]:
+            for p2 in patterns[i + 1 :]:
                 # Calculate entanglement strength
-                base_strength = (
-                    (p1.resonance * p2.resonance) ** 0.5 *
-                    np.exp(-p1.position.distance_to(p2.position))
+                base_strength = (p1.resonance * p2.resonance) ** 0.5 * np.exp(
+                    -p1.position.distance_to(p2.position)
                 )
 
                 if base_strength > self.entangle_strength:
@@ -529,7 +522,7 @@ class TimePulse:
     """Fundamental binary time pulse that provides temporal reference."""
 
     period: float = 1.0  # Base period in seconds
-    phase: float = 0.0   # Current phase [0, 1]
+    phase: float = 0.0  # Current phase [0, 1]
     _running: bool = True
     _observers: Set[threading.Event] = field(default_factory=set)
 
@@ -604,6 +597,7 @@ class MathPattern:
         sequence = [phi * n % 1 for n in range(self.length)]
         return [1 if x >= self.binary_threshold else 0 for x in sequence]
 
+
 @dataclass
 class GeometryPattern:
     """Geometric pattern generator for spatial understanding."""
@@ -627,7 +621,7 @@ class GeometryPattern:
 
         for i in range(self.size):
             for j in range(self.size):
-                if ((i - center) ** 2 + (j - center) ** 2) <= radius ** 2:
+                if ((i - center) ** 2 + (j - center) ** 2) <= radius**2:
                     pattern[i][j] = 1
         return pattern
 
@@ -640,6 +634,7 @@ class GeometryPattern:
             for j in range(border, self.size - border):
                 pattern[i][j] = 1
         return pattern
+
 
 @dataclass
 class BinaryCycle:
@@ -697,7 +692,7 @@ class BinaryCycle:
                 if self.time_pulse:
                     stream_state["temporal"] = {
                         "binary_state": self.time_pulse.get_state(),
-                        "phase": self.time_pulse.get_phase()
+                        "phase": self.time_pulse.get_phase(),
                     }
 
                 # Process mathematical and geometric patterns
@@ -730,7 +725,7 @@ class BinaryCycle:
         # Generate different mathematical patterns
         patterns = {
             "fibonacci": self.math_pattern._fibonacci_to_binary(),
-            "golden": self.math_pattern._golden_to_binary()
+            "golden": self.math_pattern._golden_to_binary(),
         }
 
         for name, sequence in patterns.items():
@@ -739,7 +734,7 @@ class BinaryCycle:
                 "sequence": str(sequence),
                 "energy": 0.8,  # Mathematical patterns have high initial energy
                 "resonance": 0.7,  # And good resonance
-                "type": "mathematical"
+                "type": "mathematical",
             }
             self.nexus_field.allow_pattern_flow(pattern_dict)
 
@@ -751,7 +746,7 @@ class BinaryCycle:
         # Generate different geometric patterns
         patterns = {
             "circle": self.geometry_pattern._circle_pattern(),
-            "square": self.geometry_pattern._square_pattern()
+            "square": self.geometry_pattern._square_pattern(),
         }
 
         for name, grid in patterns.items():
@@ -762,7 +757,7 @@ class BinaryCycle:
                 "sequence": str(sequence),
                 "energy": 0.9,  # Geometric patterns have very high initial energy
                 "resonance": 0.8,  # And strong resonance
-                "type": "geometric"
+                "type": "geometric",
             }
             self.nexus_field.allow_pattern_flow(pattern_dict)
 
@@ -815,8 +810,7 @@ class BinaryCycle:
                     "resonance": stability * 0.3,
                 }
                 self.nexus_field.pattern_fields[pattern_dict["id"]] = PatternField(
-                    energy=pattern_dict["energy"],
-                    resonance=pattern_dict["resonance"]
+                    energy=pattern_dict["energy"], resonance=pattern_dict["resonance"]
                 )
                 self.nexus_field.allow_pattern_flow(pattern_dict)
 
@@ -836,8 +830,7 @@ class BinaryCycle:
                     "resonance": stability * 0.6,
                 }
                 self.nexus_field.pattern_fields[pattern_dict["id"]] = PatternField(
-                    energy=pattern_dict["energy"],
-                    resonance=pattern_dict["resonance"]
+                    energy=pattern_dict["energy"], resonance=pattern_dict["resonance"]
                 )
                 self.nexus_field.allow_pattern_flow(pattern_dict)
 
@@ -874,14 +867,12 @@ class BinaryCycle:
         for pattern in patterns:
             if pattern["state"] == "coherent":
                 self.nexus_field.pattern_fields[pattern["id"]] = PatternField(
-                    energy=pattern["energy"],
-                    resonance=pattern["resonance"]
+                    energy=pattern["energy"], resonance=pattern["resonance"]
                 )
                 self.nexus_field.allow_pattern_flow(pattern)
             else:
                 self.nexus_field.pattern_fields[pattern["id"]] = PatternField(
-                    energy=pattern["energy"],
-                    resonance=pattern["resonance"]
+                    energy=pattern["energy"], resonance=pattern["resonance"]
                 )
                 self.nexus_field.allow_pattern_flow(pattern)
 
@@ -972,8 +963,7 @@ class BinaryCycle:
             evolved = self._evolve_patterns(integrated_patterns)
             if evolved:
                 self.nexus_field.pattern_fields[evolved["id"]] = PatternField(
-                    energy=evolved["energy"],
-                    resonance=evolved["resonance"]
+                    energy=evolved["energy"], resonance=evolved["resonance"]
                 )
                 self.nexus_field.allow_pattern_flow(evolved)
 
@@ -998,8 +988,7 @@ class BinaryCycle:
                 # Distribute through all cardinal points for maximum influence
                 for direction in ["N", "E", "NE", "NW"]:
                     self.nexus_field.pattern_fields[pattern_dict["id"]] = PatternField(
-                        energy=pattern_dict["energy"],
-                        resonance=pattern_dict["resonance"]
+                        energy=pattern_dict["energy"], resonance=pattern_dict["resonance"]
                     )
                     self.nexus_field.allow_pattern_flow(pattern_dict)
 
@@ -1019,8 +1008,7 @@ class BinaryCycle:
                 "dissolution": 1.0 - stability,
             }
             self.nexus_field.pattern_fields[pattern_dict["id"]] = PatternField(
-                energy=pattern_dict["energy"],
-                resonance=pattern_dict["resonance"]
+                energy=pattern_dict["energy"], resonance=pattern_dict["resonance"]
             )
             self.nexus_field.allow_pattern_flow(pattern_dict)
 
@@ -1041,8 +1029,7 @@ class BinaryCycle:
                     "seed_potential": stability,
                 }
                 self.nexus_field.pattern_fields[pattern_dict["id"]] = PatternField(
-                    energy=pattern_dict["energy"],
-                    resonance=pattern_dict["resonance"]
+                    energy=pattern_dict["energy"], resonance=pattern_dict["resonance"]
                 )
                 self.nexus_field.allow_pattern_flow(pattern_dict)
 
@@ -1132,7 +1119,7 @@ class BinaryCycle:
     def _calculate_rhythm(self) -> float:
         """Calculate natural rhythm based on evolutionary state and field dynamics."""
         base_rhythm = 0.1
-        phi = (1 + 5 ** 0.5) / 2
+        phi = (1 + 5**0.5) / 2
 
         # Natural breathing cycle using phi
         breath_cycle = np.sin(self.binary_state.energy_cycles / phi)
@@ -1160,23 +1147,31 @@ class BinaryCycle:
     def _update_field_dynamics(self) -> None:
         """Update field dynamics based on natural flow and breathing rhythm."""
         # Calculate polar axis flows
-        ns_flow = (len(self.nexus_field.pattern_fields["N"]) - len(self.nexus_field.pattern_fields["S"])) * 0.1
-        ew_flow = (len(self.nexus_field.pattern_fields["E"]) - len(self.nexus_field.pattern_fields["W"])) * 0.1
+        ns_flow = (
+            len(self.nexus_field.pattern_fields["N"]) - len(self.nexus_field.pattern_fields["S"])
+        ) * 0.1
+        ew_flow = (
+            len(self.nexus_field.pattern_fields["E"]) - len(self.nexus_field.pattern_fields["W"])
+        ) * 0.1
 
         # Diagonal flows
-        ne_sw_flow = (len(self.nexus_field.pattern_fields["NE"]) - len(self.nexus_field.pattern_fields["SW"])) * 0.15
-        nw_se_flow = (len(self.nexus_field.pattern_fields["NW"]) - len(self.nexus_field.pattern_fields["SE"])) * 0.15
+        ne_sw_flow = (
+            len(self.nexus_field.pattern_fields["NE"]) - len(self.nexus_field.pattern_fields["SW"])
+        ) * 0.15
+        nw_se_flow = (
+            len(self.nexus_field.pattern_fields["NW"]) - len(self.nexus_field.pattern_fields["SE"])
+        ) * 0.15
 
         # Natural breathing oscillation using phi
-        phi = (1 + 5 ** 0.5) / 2
+        phi = (1 + 5**0.5) / 2
         breath_cycle = np.sin(self.binary_state.energy_cycles / phi)
 
         # Field dynamics emerge from flow balance and breathing
         self.field_dynamics = (
-            abs(ns_flow) * 0.3 +  # Vertical polarity
-            abs(ew_flow) * 0.3 +  # Horizontal polarity
-            (abs(ne_sw_flow) + abs(nw_se_flow)) * 0.2 +  # Diagonal balance
-            abs(breath_cycle) * 0.2  # Natural breathing rhythm
+            abs(ns_flow) * 0.3  # Vertical polarity
+            + abs(ew_flow) * 0.3  # Horizontal polarity
+            + (abs(ne_sw_flow) + abs(nw_se_flow)) * 0.2  # Diagonal balance
+            + abs(breath_cycle) * 0.2  # Natural breathing rhythm
         )
 
         # Field coherence emerges from flow harmony and breath
@@ -1212,7 +1207,7 @@ class BinaryCycle:
             return
 
         # Calculate breathing influence
-        phi = (1 + 5 ** 0.5) / 2
+        phi = (1 + 5**0.5) / 2
         breath_cycle = np.sin(self.binary_state.energy_cycles / phi)
 
         # Patterns flow with the breath
@@ -1383,11 +1378,15 @@ class BinaryCycle:
             "wonder": self._calculate_wonder(p1, p2),
             "admiration": self._calculate_admiration(p1, p2),
             "surprise": self._calculate_surprise(p1, p2),
-            "desire_to_connect": self._calculate_connection_desire(p1, p2)
+            "desire_to_connect": self._calculate_connection_desire(p1, p2),
         }
 
         # Let patterns explore based on emotional drives
-        exploration_drive = emotional_state["curiosity"] * 0.3 + emotional_state["desire_to_connect"] * 0.3 + emotional_state["wonder"] * 0.4
+        exploration_drive = (
+            emotional_state["curiosity"] * 0.3
+            + emotional_state["desire_to_connect"] * 0.3
+            + emotional_state["wonder"] * 0.4
+        )
 
         # Patterns might explore even with low resonance if emotionally driven
         if resonance < 0.3 and exploration_drive < 0.5:
@@ -1401,7 +1400,7 @@ class BinaryCycle:
             "growth": self._calculate_growth_potential(p1, p2),
             "resonance": resonance,
             "insights_gained": self._calculate_insights(p1, p2),
-            "collaboration_potential": self._calculate_collaboration(p1, p2)
+            "collaboration_potential": self._calculate_collaboration(p1, p2),
         }
 
         # Meaningful experiences shape future interactions
@@ -1412,9 +1411,7 @@ class BinaryCycle:
 
         # Record profound experiences in memory
         if self.memory_block and (
-            resonance > 0.7
-            or exploration_drive > 0.8
-            or emotional_state["wonder"] > 0.9
+            resonance > 0.7 or exploration_drive > 0.8 or emotional_state["wonder"] > 0.9
         ):
             self._record_profound_experience(p1, p2, experience)
 
@@ -1457,7 +1454,7 @@ class BinaryCycle:
         surprise_factor = abs(actual_harmony - expected_harmony)
 
         # Pattern beauty (using golden ratio)
-        phi = (1 + 5 ** 0.5) / 2
+        phi = (1 + 5**0.5) / 2
         sequence1 = str(p1.get("sequence", ""))
         sequence2 = str(p2.get("sequence", ""))
         ratio = len(sequence1) / (len(sequence2) + 1e-6)
@@ -1502,8 +1499,8 @@ class BinaryCycle:
         # Emergent properties
         emergent_factor = float(
             abs(
-                (p1.get("energy", 0.0) + p2.get("energy", 0.0)) / 2 -
-                self._calculate_harmony(p1, p2)
+                (p1.get("energy", 0.0) + p2.get("energy", 0.0)) / 2
+                - self._calculate_harmony(p1, p2)
             )
         )
 
@@ -1517,24 +1514,23 @@ class BinaryCycle:
         # 3. Growth potential
         # 4. Emotional resonance
 
-        complementarity = 1.0 - abs(
-            float(p1.get("energy", 0.0)) - float(p2.get("energy", 0.0))
-        )
+        complementarity = 1.0 - abs(float(p1.get("energy", 0.0)) - float(p2.get("energy", 0.0)))
 
-        shared_history = len([
-            h for h in self.pattern_history
-            if str(p1.get("id")) in h and str(p2.get("id")) in h
-        ])
-        shared_experience = np.exp(-0.1 * shared_history)  # Desire decreases with familiarity but never disappears
+        shared_history = len(
+            [h for h in self.pattern_history if str(p1.get("id")) in h and str(p2.get("id")) in h]
+        )
+        shared_experience = np.exp(
+            -0.1 * shared_history
+        )  # Desire decreases with familiarity but never disappears
 
         growth_potential = self._calculate_growth_potential(p1, p2)
         emotional_resonance = self._calculate_emotional_resonance(p1, p2)
 
         return float(
-            complementarity * 0.3 +
-            shared_experience * 0.2 +
-            growth_potential * 0.3 +
-            emotional_resonance * 0.2
+            complementarity * 0.3
+            + shared_experience * 0.2
+            + growth_potential * 0.3
+            + emotional_resonance * 0.2
         )
 
     def _calculate_emotional_resonance(self, p1: Dict[str, Any], p2: Dict[str, Any]) -> float:
@@ -1551,17 +1547,20 @@ class BinaryCycle:
             return 0.0
 
         # Compare emotional states
-        emotional_harmony = 1.0 - float(np.mean([
-            abs(p1_emotions.get(e, 0.0) - p2_emotions.get(e, 0.0))
-            for e in ["curiosity", "wonder", "admiration"]
-        ]))
+        emotional_harmony = 1.0 - float(
+            np.mean(
+                [
+                    abs(p1_emotions.get(e, 0.0) - p2_emotions.get(e, 0.0))
+                    for e in ["curiosity", "wonder", "admiration"]
+                ]
+            )
+        )
 
         # Check interaction history
         key = f"{hash(str(p1))}-{hash(str(p2))}"
-        meaningful_interactions = len([
-            h for h in self.pattern_history
-            if key in h and "meaningful" in h
-        ])
+        meaningful_interactions = len(
+            [h for h in self.pattern_history if key in h and "meaningful" in h]
+        )
         history_factor = 1.0 - np.exp(-0.1 * meaningful_interactions)
 
         return float(emotional_harmony * 0.6 + history_factor * 0.4)
@@ -1579,15 +1578,13 @@ class BinaryCycle:
 
         # Update relationship strength in resonance map
         current_resonance = self.resonance_map.get(key, 0.0)
-        emotional_impact = float(np.mean([
-            v for k, v in experience["emotional_state"].items()
-        ]))
+        emotional_impact = float(np.mean([v for k, v in experience["emotional_state"].items()]))
 
         # Relationship strengthens through emotional experiences
         new_resonance = float(
-            current_resonance * 0.7 +  # Maintain history
-            experience["resonance"] * 0.15 +  # Current resonance
-            emotional_impact * 0.15  # Emotional impact
+            current_resonance * 0.7  # Maintain history
+            + experience["resonance"] * 0.15  # Current resonance
+            + emotional_impact * 0.15  # Emotional impact
         )
         self.resonance_map[key] = new_resonance
 
@@ -1605,16 +1602,18 @@ class BinaryCycle:
             "insights": experience["insights_gained"],
             "collaboration": experience["collaboration_potential"],
             "resonance": experience["resonance"],
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
         # Convert emotional state to sequence
-        experience_sequence = np.array([
-            experience["emotional_state"]["curiosity"],
-            experience["emotional_state"]["wonder"],
-            experience["emotional_state"]["admiration"],
-            experience["resonance"]
-        ])
+        experience_sequence = np.array(
+            [
+                experience["emotional_state"]["curiosity"],
+                experience["emotional_state"]["wonder"],
+                experience["emotional_state"]["admiration"],
+                experience["resonance"],
+            ]
+        )
 
         # Create rich metrics
         metrics = MemoryMetrics()
@@ -1624,9 +1623,7 @@ class BinaryCycle:
 
         # Store profound experience
         self.memory_block.write(
-            f"profound_{hash(str(experience_data))}",
-            str(experience_sequence),
-            metrics
+            f"profound_{hash(str(experience_data))}", str(experience_sequence), metrics
         )
 
     def _calculate_insights(self, p1: Dict[str, Any], p2: Dict[str, Any]) -> float:
@@ -1637,7 +1634,9 @@ class BinaryCycle:
         # 3. Applying learned patterns
 
         # Learning from experience
-        learning_factor = experience["growth"] * 0.4 + experience["harmony"] * 0.3 + experience["resonance"] * 0.3
+        learning_factor = (
+            experience["growth"] * 0.4 + experience["harmony"] * 0.3 + experience["resonance"] * 0.3
+        )
 
         # Recognizing patterns in new contexts
         context_factor = 0.0
@@ -1690,15 +1689,21 @@ class BinaryCycle:
         # Shared elements in sequence
         s1 = str(p1.get("sequence", ""))
         s2 = str(p2.get("sequence", ""))
-        pattern_similarity = len(set(s1) & set(s2)) / len(set(s1) | set(s2)))
+        pattern_similarity = len(set(s1) & set(s2)) / len(set(s1) | set(s2))
 
         # Resonance alignment
-        resonance_similarity = 1.0 - abs(float(p1.get("resonance", 0.0)) - float(p2.get("resonance", 0.0)))
+        resonance_similarity = 1.0 - abs(
+            float(p1.get("resonance", 0.0)) - float(p2.get("resonance", 0.0))
+        )
 
         # Energy complementarity
-        energy_complementarity = 1.0 - abs(float(p1.get("energy", 0.0)) - float(p2.get("energy", 0.0)))
+        energy_complementarity = 1.0 - abs(
+            float(p1.get("energy", 0.0)) - float(p2.get("energy", 0.0))
+        )
 
-        return float(pattern_similarity * 0.3 + resonance_similarity * 0.3 + energy_complementarity * 0.4)
+        return float(
+            pattern_similarity * 0.3 + resonance_similarity * 0.3 + energy_complementarity * 0.4
+        )
 
     def _calculate_natural_resonance(self, p1: Dict[str, Any], p2: Dict[str, Any]) -> float:
         """Calculate natural resonance between patterns."""
@@ -1834,7 +1839,7 @@ class BinaryCycle:
 
         s1 = str(p1.get("sequence", ""))
         s2 = str(p2.get("sequence", ""))
-        pattern_similarity = len(set(s1) & set(s2)) / len(set(s1) | set(s2)))
+        pattern_similarity = len(set(s1) & set(s2)) / len(set(s1) | set(s2))
 
         return resonance_harmony * 0.4 + energy_complement * 0.3 + pattern_similarity * 0.3
 
@@ -1879,7 +1884,7 @@ class BinaryCycle:
             for point, strength in cascade_points:
                 # Sample surrounding field
                 radius = strength * 2.0
-                angles = np.linspace(0, 2*np.pi, 6)  # 6 directions
+                angles = np.linspace(0, 2 * np.pi, 6)  # 6 directions
 
                 for angle in angles:
                     x = point.x + radius * np.cos(angle)
@@ -1917,7 +1922,7 @@ class BinaryCycle:
             fused_pattern = PatternField(
                 energy=transform_energy * 0.9,  # Some energy lost in fusion
                 resonance=max(p1.resonance, p2.resonance) * 0.95,
-                position=transformed.position
+                position=transformed.position,
             )
             self.pattern_fields[f"fused_{time.time()}"] = fused_pattern
 
@@ -1931,6 +1936,6 @@ class BinaryCycle:
                 fission_pattern = PatternField(
                     energy=transform_energy * 0.4,  # Energy split between patterns
                     resonance=transformed.resonance * 0.7,
-                    position=Position(x, y)
+                    position=Position(x, y),
                 )
                 self.pattern_fields[f"fission_{i}_{time.time()}"] = fission_pattern
