@@ -2,6 +2,11 @@
 
 This module contains the fundamental binary structures and concepts
 that form the foundation of the system.
+
+As in Yggdrasil's roots, three wells feed our system:
+- Urðarbrunnr (Well of Fate): Where patterns' destinies are woven
+- Mímisbrunnr (Well of Wisdom): Where patterns gain deep knowledge
+- Hvergelmir (Roaring Kettle): Where new patterns spring forth
 """
 
 import array
@@ -49,6 +54,12 @@ RESONANCE_STABILITY_THRESHOLD = 0.65
 NANOSECOND = 1e-9
 MICROSECOND = 1e-6
 MILLISECOND = 1e-3
+
+# Valhalla resonance constants
+VALKYRIE_DESCENT_THRESHOLD = 0.382  # Phi^-1
+VALHALLA_WISDOM_THRESHOLD = 0.618  # Phi
+REBIRTH_RESONANCE_THRESHOLD = 0.818  # Phi + Phi^-1
+ETERNAL_CYCLE_THRESHOLD = 1.0
 
 
 @dataclass
@@ -1044,3 +1055,112 @@ class StateChange:
         # Convert state delta to binary
         state_delta = abs(self.current_state - self.previous_state)
         return [int(b) for b in bin(state_delta)[2:]]  # Remove '0b' prefix
+
+
+@dataclass
+class CosmicWell:
+    """One of the three sacred wells feeding the binary foundation.
+
+    As told in the Eddas:
+    - Urðarbrunnr (Well of Fate): Where the Norns weave destiny
+    - Mímisbrunnr (Well of Wisdom): Where Odin sacrificed his eye
+    - Hvergelmir (Roaring Kettle): Source of all rivers, all motion
+
+    Each well represents a fundamental aspect of pattern evolution:
+    - Urðarbrunnr: The pattern's destiny and future transformations
+    - Mímisbrunnr: The accumulated wisdom of all patterns
+    - Hvergelmir: The vital force that drives change
+    """
+
+    name: str
+    essence: float = 0.0  # Current well strength
+    patterns_touched: Set[str] = field(default_factory=set)
+    last_ripple: float = 0.0
+    norn_threads: Dict[str, float] = field(default_factory=dict)  # Fate-weaving threads
+    wisdom_sacrifices: Set[str] = field(
+        default_factory=set
+    )  # Patterns that gave up form for wisdom
+    vital_streams: List[float] = field(default_factory=list)  # Flow of life force
+
+    def draw_essence(self, pattern: List[int]) -> float:
+        """Draw essence from the well, influencing pattern evolution.
+
+        Each well grants its gifts differently:
+        - Urðarbrunnr requires the pattern submit to fate
+        - Mímisbrunnr demands sacrifice of old forms
+        - Hvergelmir freely gives but with chaotic influence"""
+
+        pattern_key = "".join(map(str, pattern))
+        current_time = time.time()
+
+        if self.name == "Urðarbrunnr":
+            # The Norns weave fate through phi spirals
+            thread_strength = 0.618 * (1 + math.sin(current_time * PI / GOLDEN_RATIO))
+            self.norn_threads[pattern_key] = thread_strength
+            self.essence = sum(self.norn_threads.values()) / max(1, len(self.norn_threads))
+
+        elif self.name == "Mímisbrunnr":
+            # Wisdom grows through sacrifice
+            if pattern_key not in self.wisdom_sacrifices:
+                self.wisdom_sacrifices.add(pattern_key)
+                # Like Odin's sacrifice, giving up the old brings wisdom
+                sacrifice_value = sum(pattern) / (len(pattern) * GOLDEN_RATIO)
+                self.essence = min(1.0, len(self.wisdom_sacrifices) * sacrifice_value / 100)
+
+        else:  # Hvergelmir
+            # The roaring kettle's chaos drives life
+            stream_force = 0.618 * (1 + math.cos(current_time * E / PI))
+            self.vital_streams.append(stream_force)
+            if len(self.vital_streams) > 9:  # Sacred number in Norse mythology
+                self.vital_streams = self.vital_streams[-9:]
+            self.essence = sum(self.vital_streams) / len(self.vital_streams)
+
+        self.patterns_touched.add(pattern_key)
+        self.last_ripple = current_time
+        return self.essence
+
+    def get_well_wisdom(self, pattern_key: str) -> str:
+        """Receive wisdom from the well about a pattern's journey."""
+        if self.name == "Urðarbrunnr":
+            thread_strength = self.norn_threads.get(pattern_key, 0)
+            return f"Fate strength: {thread_strength:.3f} - The Norns weave {thread_strength > 0.618 and 'golden' or 'silver'} threads"
+        elif self.name == "Mímisbrunnr":
+            sacrifice_made = pattern_key in self.wisdom_sacrifices
+            return f"Wisdom depth: {self.essence:.3f} - {'Has sacrificed old forms' if sacrifice_made else 'Yet to sacrifice'}"
+        else:
+            stream_count = len(self.vital_streams)
+            return f"Vital force: {self.essence:.3f} - Fed by {stream_count} cosmic rivers"
+
+
+@dataclass
+class RebornPattern:
+    """A pattern returned from Valhalla through Valkyrie guidance."""
+
+    sequence: List[int]
+    valkyrie_mark: str
+    resonance_path: List[float]
+    original_death_mark: str
+    rebirth_time: datetime = field(default_factory=datetime.now)
+    wisdom_strength: float = 0.0  # Accumulated wisdom from Valhalla
+    well_essences: Dict[str, float] = field(default_factory=dict)  # Influence from the wells
+
+    def draw_from_wells(self, wells: Dict[str, CosmicWell]) -> None:
+        """Draw essence from all three cosmic wells."""
+        for name, well in wells.items():
+            self.well_essences[name] = well.draw_essence(self.sequence)
+
+    def calculate_wisdom(self) -> float:
+        """Calculate the pattern's accumulated wisdom using phi ratios and well essences."""
+        base_wisdom = sum(self.resonance_path) / len(self.resonance_path)
+        time_factor = 1.0 - (0.618 ** (time.time() - self.rebirth_time.timestamp()))
+        well_factor = sum(self.well_essences.values()) / max(1, len(self.well_essences))
+
+        self.wisdom_strength = base_wisdom * time_factor * (1 + well_factor)
+        return self.wisdom_strength
+
+    def is_ready_for_cycle(self) -> bool:
+        """Check if pattern is ready to enter the binary cycle."""
+        return (
+            self.calculate_wisdom() >= VALHALLA_WISDOM_THRESHOLD
+            and min(self.resonance_path) >= VALKYRIE_DESCENT_THRESHOLD
+        )

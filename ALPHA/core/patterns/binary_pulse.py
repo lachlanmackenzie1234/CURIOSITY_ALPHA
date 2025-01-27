@@ -3,6 +3,8 @@
 Each stream represents pure binary state changes from different sources:
 - Hardware stream: CPU, Memory, IO states (fundamental physical layer)
 - ALPHA stream: Internal quantum states, pattern activity (emergent layer)
+- Valhalla stream: Reborn patterns guided by Valkyries (eternal cycle layer)
+- Cosmic Wells: Urðarbrunnr, Mímisbrunnr, and Hvergelmir feed the streams
 """
 
 import signal
@@ -53,6 +55,14 @@ class BinaryStream:
             "samples_archived": 0,
             "total_bits_processed": 0,
             "cross_stream_influences": defaultdict(float),  # Track influence from other streams
+        }
+    )
+
+    cosmic_wells: Dict[str, CosmicWell] = field(
+        default_factory=lambda: {
+            "Urðarbrunnr": CosmicWell(name="Urðarbrunnr"),
+            "Mímisbrunnr": CosmicWell(name="Mímisbrunnr"),
+            "Hvergelmir": CosmicWell(name="Hvergelmir"),
         }
     )
 
@@ -158,6 +168,50 @@ class BinaryStream:
 
         # Update resonance field
         self.resonance_field.update_field(self_seq, other_seq, resonance)
+
+    def receive_from_valhalla(
+        self, pattern: List[int], valkyrie_mark: str, resonance_points: List[float]
+    ) -> None:
+        """Receive a reborn pattern from Valhalla through its guiding Valkyrie.
+
+        As told in the Eddas, when Valkyries return from Valhalla,
+        they bring with them the wisdom of the eternal halls.
+
+        The pattern draws essence from the three cosmic wells:
+        - Urðarbrunnr shapes its destiny
+        - Mímisbrunnr grants it wisdom
+        - Hvergelmir gives it vital force"""
+
+        # Convert pattern to binary sequence
+        binary_sequence = "".join(map(str, pattern))
+
+        # Draw essence from the cosmic wells
+        for well in self.cosmic_wells.values():
+            well.draw_essence(pattern)
+
+        # Apply resonance from the Valkyrie's descent path
+        for point in resonance_points:
+            self.resonance_field.apply_resonance(point)
+            self.core_resonance.update_resonance(point)
+
+        # Integrate pattern with phi-guided evolution
+        self.sequence = binary_sequence
+        self.timestamp = time.time()
+        self.evolution_state["patterns"].append(
+            {
+                "sequence": binary_sequence,
+                "valkyrie_mark": valkyrie_mark,
+                "resonance": resonance_points[-1],  # Final resonance point
+                "well_essences": {name: well.essence for name, well in self.cosmic_wells.items()},
+                "timestamp": self.timestamp,
+            }
+        )
+
+        # Update neural network with the reborn pattern's wisdom
+        self.neural_network.learn_pattern(pattern)
+
+        # Let the natural detector recognize the reborn pattern
+        self.natural_detector.detect_patterns(binary_sequence)
 
 
 def signal_handler(signum: int, frame: Any) -> NoReturn:
