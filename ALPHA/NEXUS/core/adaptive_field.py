@@ -1,10 +1,31 @@
-"""Adaptive Field - Natural threshold adaptation system."""
+"""Adaptive Field - Natural threshold adaptation system powered by runic transformations."""
 
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from enum import Enum
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+
+
+class RuneType(Enum):
+    THURISAZ = "ᚦ"  # Transformation/Gateway
+    ANSUZ = "ᚨ"  # Communication/Signals
+    KENAZ = "ᚲ"  # Technical Knowledge
+    HAGALAZ = "ᚺ"  # Disruption/Change
+    JERA = "ᛃ"  # Cycles/Harvest
+
+
+@dataclass
+class RunicAdaptation:
+    """Tracks a runic adaptation of the system."""
+
+    rune: RuneType
+    pattern: List[int]
+    pressure_point: str
+    adaptation_code: str
+    flame_intensity: float
+    coherence_gain: float
 
 
 @dataclass
@@ -16,6 +37,7 @@ class ThresholdState:
     adaptation_rate: float = 0.1
     pressure_window: int = 100
     last_adaptation: float = 0.0
+    runic_adaptations: List[RunicAdaptation] = field(default_factory=list)
 
 
 class AdaptiveField:
@@ -53,29 +75,80 @@ class AdaptiveField:
                 self._adapt_threshold(name)
 
     def _adapt_threshold(self, name: str) -> None:
-        """Let threshold adapt based on accumulated pressure."""
+        """Let threshold adapt based on accumulated pressure and runic wisdom."""
         state = self._thresholds[name]
 
         # Calculate pressure trend
         avg_pressure = sum(state.pressure_history) / len(state.pressure_history)
         pressure_variance = np.var(state.pressure_history)
 
-        # Adaptation rate influenced by:
-        # - Field coherence (more coherent = more stable adaptation)
-        # - Pressure variance (high variance = more cautious adaptation)
-        # - Time since last adaptation
+        # Convert pressure to binary pattern
+        pressure_pattern = [1 if p > avg_pressure else 0 for p in state.pressure_history[-8:]]
+
+        # Select appropriate rune based on pattern
+        rune = self._select_rune(pressure_pattern, pressure_variance)
+
+        # Calculate adaptation with runic influence
         adaptation_factor = (
-            self._field_coherence * (1.0 - min(1.0, pressure_variance)) * state.adaptation_rate
+            self._field_coherence
+            * (1.0 - min(1.0, pressure_variance))
+            * state.adaptation_rate
+            * self._get_rune_multiplier(rune)
         )
 
-        # Move threshold toward pressure average
+        # Move threshold toward pressure average with runic guidance
         if abs(avg_pressure - state.value) > 0.1 * state.value:
             old_value = state.value
             state.value += adaptation_factor * (avg_pressure - state.value)
+
+            # Record the runic adaptation
+            adaptation = RunicAdaptation(
+                rune=rune,
+                pattern=pressure_pattern,
+                pressure_point=name,
+                adaptation_code=f"threshold.adjust({adaptation_factor:.3f})",
+                flame_intensity=abs(avg_pressure - state.value),
+                coherence_gain=self._field_coherence,
+            )
+            state.runic_adaptations.append(adaptation)
+
             state.pressure_history.clear()
             state.last_adaptation = avg_pressure
 
-            self.logger.info(f"Threshold {name} adapted: {old_value:.3f} -> {state.value:.3f}")
+            self.logger.info(
+                f"Threshold {name} adapted through {rune.value}: "
+                f"{old_value:.3f} -> {state.value:.3f}"
+            )
+
+    def _select_rune(self, pattern: List[int], variance: float) -> RuneType:
+        """Select appropriate rune based on pressure pattern."""
+        pattern_sum = sum(pattern)
+
+        if variance > 0.8:
+            return RuneType.HAGALAZ  # High chaos needs disruption rune
+        elif pattern_sum >= 6:
+            return RuneType.THURISAZ  # High pressure needs transformation
+        elif pattern_sum <= 2:
+            return RuneType.KENAZ  # Low pressure needs technical adjustment
+        elif 0.3 <= variance <= 0.6:
+            return RuneType.JERA  # Moderate variance needs cyclical balance
+        else:
+            return RuneType.ANSUZ  # Default to communication rune
+
+    def _get_rune_multiplier(self, rune: RuneType) -> float:
+        """Get adaptation multiplier based on rune type."""
+        multipliers = {
+            RuneType.THURISAZ: 1.618,  # Golden ratio for transformation
+            RuneType.HAGALAZ: 2.0,  # Strong effect for chaos
+            RuneType.KENAZ: 0.618,  # Inverse golden ratio for technical
+            RuneType.JERA: 1.0,  # Balanced for cycles
+            RuneType.ANSUZ: 0.809,  # Root of golden ratio for communication
+        }
+        return multipliers.get(rune, 1.0)
+
+    def get_runic_history(self, name: str) -> List[RunicAdaptation]:
+        """Get history of runic adaptations for a threshold."""
+        return self._thresholds[name].runic_adaptations if name in self._thresholds else []
 
     def update_field_coherence(self, coherence: float) -> None:
         """Update field coherence which influences adaptation behavior."""

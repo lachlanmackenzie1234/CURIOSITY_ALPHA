@@ -1,0 +1,73 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build and distribution
+*.egg-info/
+dist/
+build/
+coverage.xml
+
+# Temporary files
+*.log
+*.tmp
+.DS_Store
+
+# Test files (we'll focus on core functionality)
+tests/
+test_*.py
+*_test.py
+conftest.py
+run_tests.py
+run_single_test.py
+run_tests.sh
+
+# Git related
+.git/
+.gitignore
+.gitattributes
+COMMIT_EDITMSG
+
+# Project metadata
+setup.py
+pyproject.toml
+requirements.txt
+*.cfg
+*.ini
+
+# Generated documentation
+docs/_build/
+docs/generated/
+*.rst
+*.md
+!README.md  # Keep main README
+
+# Backup files
+*~
+*.bak
+*.backup
+.*.swp
+
+# System and hidden files
+.env
+.env.*
+*.lock
+.coverage
+.tox/
