@@ -71,3 +71,6 @@ docs/generated/
 *.lock
 .coverage
 .tox/
+
+# State files
+ALPHA/core/state/birth_state.json
